@@ -12,7 +12,7 @@ Domain terms used below: a **flat code** looks like `T07-1203` (tower 07, flat 1
 Files: `CLAUDE.md`, `docs/BRIEF.md`, `docs/PLAN.md`, `docs/PROGRESS.md`, `docs/ASSUMPTIONS.md`, `.gitignore` (Java, Node, `.env`, IDE folders), `.env.example`, short `README.md` (one paragraph + "see deployment.md").
 Commit: `docs: add client brief, build plan and working rules`
 
-### [ ] Step 1: Backend skeleton
+### [x] Step 1: Backend skeleton
 - Spring Boot 3.x, Java 21, Maven wrapper, package `com.isocode.township`.
 - Dependencies: web, data-jpa, security, validation, flyway (+ flyway-database-postgresql), postgresql, actuator, commons-csv, jjwt (or Spring's `NimbusJwtEncoder`), lombok not allowed (keep code explicit), test: spring-boot-starter-test, testcontainers postgresql, junit-jupiter.
 - `docker-compose.yml` with PostgreSQL 16 (credentials read from `.env`).
