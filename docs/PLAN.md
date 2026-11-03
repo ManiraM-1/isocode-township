@@ -101,7 +101,7 @@ Create `samples/bank-statement-demo.csv` (about 20 rows, built against seed data
 Tests: every alias set parses; Indian grouping; each date format; malformed row reported with its number while other rows parse; BOM file parses; missing header is a file error.
 Commit: `feat(matching): parse bank statement CSVs into normalised credit rows`
 
-### [ ] Step 7: Matching engine (the hard part)
+### [x] Step 7: Matching engine (the hard part)
 Pure class `PaymentMatcher.match(row, context)` → `MatchResult(decision, flatId, candidates, confidence, reasons[], duplicateOfRowNo)`. `context` is built once per import (not per row): flat codes → flat id, known UPI IDs → flat id, outstanding per flat and remaining principal per unpaid bill, payments by gateway ref, UTRs and gateway refs already posted or reconciled, and row hashes of earlier bank rows. Rows of the same file are added to the seen sets as they are matched, so a repeat inside one file is caught too.
 
 Signals:

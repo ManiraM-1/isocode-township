@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 7
+**Next step:** Step 8
 
 ---
 
@@ -67,3 +67,11 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Plan updated before this step: Step 8 now includes the late-fee reversal for back-dated payments and the demo-mode generated statement; Step 15 includes the "Download sample statement" button.
 - Open items: the static sample is valid only on the fixed test date; reviewers on the live app will use the generated statement from Step 8.
 - Next step: Step 7
+
+## 2026-11-03: Step 7, Matching engine
+- Plan change first (own commit, with Maniram): the amount is a supporting signal only; a conflict is only reference vs UPI ID or an ambiguous reference; repeated UTR → `DUPLICATE`, repeated row without UTR → `POSSIBLE_DUPLICATE` (queued, never auto-posted); Step 8's `bank_row.row_hash` becomes a non-unique index plus `duplicate_of_row_id` (A9 rewritten, A28 added). The sample statement now has 22 rows covering both duplicate kinds, a reference whose amount is shared by two flats, and an agreeing reference and UPI ID whose amount points elsewhere.
+- Built: pure `PaymentMatcher.match(row, context)` and `matchAll(rows, context)` in `matching`, applying the twelve-row decision table in order. `MatchContext` is built once per import (flat codes, known UPI IDs, remaining principal per unpaid bill and total outstanding per flat, gateway payments, posted UTRs, earlier bank rows' UTRs, reconciled gateway refs and row hashes); `matchAll` adds each row's UTR, gateway ref and hash as it goes, so repeats inside one file are caught. `FlatReferences` accepts `T07-1203`, `T7-1203`, `T07/1203`, `T07 1203`, `T071203`, `TOWER 7 FLAT 1203` (any case), ignores look-alikes such as `OCT-2026` or `PGTEST-…`, and reports codes that are not flats. Every `MatchResult` carries the decision, flat, candidates, confidence, human-readable reasons (amounts in Indian format via `IndianRupees`), the row it duplicates and, for gateway rows, the payment it reconciles.
+- Tests: 270 passing. One per table row (12, row 6 twice), the amount-as-support cases (R + V with A elsewhere → AUTO with the "ignored" reason; R alone or V alone with A elsewhere → SUGGESTED, never CONFLICT; R or V + unique A on the same flat → AUTO; A on several flats including the R flat → SUGGESTED), duplicates (UTR repeated in a file, repeated row with and without UTR, earlier import, gateway ref already reconciled), every reference format and false positives. The sample statement is matched against a seed-like context and every row gets the decision in `samples/README.md` (5 auto, 1 reconciled, 5 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 1 possible duplicate, 2 non-credit). Performance: 3,000 rows against 2,400 flats in about 0.5 s (budget 3 s).
+- New assumptions: none beyond A9 (rewritten) and A28 (already committed).
+- Open items: none for the engine; Step 8 builds the context from the database, persists the results and posts AUTO_POSTED rows.
+- Next step: Step 8
