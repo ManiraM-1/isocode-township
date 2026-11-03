@@ -104,6 +104,22 @@ class DemoDataSeederTest {
     }
 
     @Test
+    void liftTowerHasEnoughFlatsWithASignInResidentForDuplicateScenarios() {
+        seeder.seedIfEmpty();
+
+        Integer flatsWithSignInResident = jdbcTemplate.queryForObject("""
+                SELECT count(DISTINCT f.id)
+                FROM flat f
+                JOIN tower t ON t.id = f.tower_id
+                JOIN flat_member m ON m.flat_id = f.id AND m.active
+                JOIN app_user u ON u.id = m.user_id AND u.active AND u.phone IS NOT NULL
+                WHERE t.code = 'T07'
+                """, Integer.class);
+
+        assertThat(flatsWithSignInResident).isGreaterThanOrEqualTo(8);
+    }
+
+    @Test
     void seedsTheHelpDeskTeamWithSkillsAndOneDutyManager() {
         seeder.seedIfEmpty();
 
