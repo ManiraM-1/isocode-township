@@ -225,6 +225,7 @@ Commit: `feat(web): add committee dashboard with collections, ageing and complai
 - Walk every flow at 360 px and at desktop width. No horizontal scroll, no dead buttons, every async action has loading and error states, all forms validate inline, focus states visible, colour contrast AA.
 - Security pass: no secrets in history (`git log -p | grep -iE "key|secret|password"` reviewed), CSRF working, every desk endpoint role-checked, every flat endpoint membership-checked, upload limits enforced, security headers set.
 - Write `docs/DEMO.md`: a 5-minute reviewer walkthrough (resident pays → help desk imports CSV → queue → complaint with escalation → committee).
+- **Demo reset:** `POST /api/desk/demo/reset` (HELPDESK only) that exists only when `APP_DEMO_MODE=true` (the controller bean is not created otherwise, so the route is a 404). It wipes all data (Flyway `clean` then `migrate`, allowed only in demo mode, because the ledger trigger correctly refuses deletes) and reseeds relative to the current date, so the brief scenarios (47 and 18 days overdue) are true again on any day. The desk UI has a "Reset demo data" button, shown only in demo mode, with a confirm step. Tests: reset restores the seeded state; resident gets 403; with demo mode off the endpoint does not exist.
 Commit: `chore: polish states and accessibility and add reviewer demo script`
 
 ### [ ] Step 18: Docker image, deployment and docs
