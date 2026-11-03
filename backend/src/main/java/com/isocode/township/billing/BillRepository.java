@@ -34,4 +34,6 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
     List<Bill> findUnpaidByFlat(@Param("flatId") Long flatId);
 
     List<Bill> findByFlatIdOrderByPeriodDesc(Long flatId);
+
+    List<Bill> findByPeriodOrderByFlatIdAsc(LocalDate period);
 }

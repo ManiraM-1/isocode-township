@@ -71,7 +71,7 @@ Seed: three months of bills for every flat (ending with the current month). Paym
 Tests: 1150 × 6.50 = 7,475.00; 980 × 6.50 = 6,370.00; 1640 × 6.50 = 10,660.00; late fee on ₹6,370 for 47 days at 21% = 6370 × 0.21 × 47/365 = 172.25 (assert exact); zero interest on or before due date; billing run idempotent; ledger never updated (repository exposes no update/delete).
 Commit: `feat(billing): generate monthly bills by area and post late interest to an append-only ledger`
 
-### [ ] Step 5: Payments with test-mode gateway and receipts
+### [x] Step 5: Payments with test-mode gateway and receipts
 Flyway `V3__payments.sql`:
 - `payment(id, flat_id, amount, method ('ONLINE_TEST','UPI','BANK_TRANSFER','CHEQUE'), source ('GATEWAY','BANK_STATEMENT','MANUAL'), gateway_ref, utr, paid_on, receipt_no UNIQUE, posted_by, created_at)`
 - `payment_allocation(id, payment_id, bill_id NULL, late_fee_charge_id NULL, amount)`

@@ -1,6 +1,6 @@
 package com.isocode.township.common;
 
-import com.isocode.township.billing.BillingDemoSeeder;
+import com.isocode.township.payment.DemoHistorySeeder;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -12,18 +12,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class DemoDataSeedRunner implements ApplicationRunner {
 
     private final DemoDataSeeder coreSeeder;
-    private final BillingDemoSeeder billingSeeder;
+    private final DemoHistorySeeder historySeeder;
 
-    public DemoDataSeedRunner(DemoDataSeeder coreSeeder, BillingDemoSeeder billingSeeder) {
+    public DemoDataSeedRunner(DemoDataSeeder coreSeeder, DemoHistorySeeder historySeeder) {
         this.coreSeeder = coreSeeder;
-        this.billingSeeder = billingSeeder;
+        this.historySeeder = historySeeder;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         if (coreSeeder.seedIfEmpty()) {
-            billingSeeder.seed();
+            historySeeder.seed();
         }
     }
 }

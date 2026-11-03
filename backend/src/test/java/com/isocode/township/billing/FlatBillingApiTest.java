@@ -11,6 +11,7 @@ import com.isocode.township.TestSessions;
 import com.isocode.township.common.DemoDataSeeder;
 import com.isocode.township.flat.FlatRepository;
 import jakarta.persistence.EntityManager;
+import java.time.YearMonth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,7 +32,7 @@ class FlatBillingApiTest {
     private DemoDataSeeder seeder;
 
     @Autowired
-    private BillingDemoSeeder billingSeeder;
+    private BillingRunService billingRunService;
 
     @Autowired
     private FlatRepository flatRepository;
@@ -57,7 +58,7 @@ class FlatBillingApiTest {
 
     @Test
     void summaryShowsOutstandingLiveLateFeeAndDaysOverdue() throws Exception {
-        billingSeeder.seed();
+        billSeptemberToNovember();
 
         mockMvc.perform(get("/api/flats/{id}/summary", swatiFlat).cookie(sessions.sessionFor(TestSessions.SWATI)))
                 .andExpect(status().isOk())
@@ -73,7 +74,7 @@ class FlatBillingApiTest {
 
     @Test
     void billsAreListedNewestFirstWithStatus() throws Exception {
-        billingSeeder.seed();
+        billSeptemberToNovember();
 
         mockMvc.perform(get("/api/flats/{id}/bills", swatiFlat).cookie(sessions.sessionFor(TestSessions.SWATI)))
                 .andExpect(status().isOk())
@@ -86,7 +87,7 @@ class FlatBillingApiTest {
 
     @Test
     void ledgerShowsEveryDebitInDateOrderWithARunningBalance() throws Exception {
-        billingSeeder.seed();
+        billSeptemberToNovember();
 
         mockMvc.perform(get("/api/flats/{id}/ledger", swatiFlat).cookie(sessions.sessionFor(TestSessions.SWATI)))
                 .andExpect(status().isOk())
@@ -113,7 +114,7 @@ class FlatBillingApiTest {
 
     @Test
     void helpDeskCanReadAnyFlat() throws Exception {
-        billingSeeder.seed();
+        billSeptemberToNovember();
 
         mockMvc.perform(get("/api/flats/{id}/summary", swatiFlat).cookie(sessions.sessionFor(TestSessions.ANJALI)))
                 .andExpect(status().isOk())
@@ -135,6 +136,12 @@ class FlatBillingApiTest {
                 .andExpect(jsonPath("$.accruedLateFee").value("0.00"))
                 .andExpect(jsonPath("$.oldestUnpaidDueDate").isEmpty())
                 .andExpect(jsonPath("$.daysOverdue").value(0));
+    }
+
+    private void billSeptemberToNovember() {
+        billingRunService.run(YearMonth.of(2026, 9), null);
+        billingRunService.run(YearMonth.of(2026, 10), null);
+        billingRunService.run(YearMonth.of(2026, 11), null);
     }
 
     @Test

@@ -32,9 +32,6 @@ class BillingRunServiceTest {
     private BillingRunService billingRunService;
 
     @Autowired
-    private BillingDemoSeeder billingDemoSeeder;
-
-    @Autowired
     private DemoDataSeeder seeder;
 
     @Autowired
@@ -173,12 +170,13 @@ class BillingRunServiceTest {
     }
 
     @Test
-    void demoSeedBillsThreeMonthsEndingWithTheCurrentMonth() {
-        billingDemoSeeder.seed();
+    void issuingASingleBillWithAnExplicitDueDateAlsoDebitsTheLedger() {
+        Bill bill = billingRunService.issueBill(swatiFlat, SEPTEMBER, LocalDate.of(2026, 9, 17), null);
 
-        assertThat(billRepository.count()).isEqualTo(3 * 48);
-        assertThat(billRepository.findByFlatIdOrderByPeriodDesc(aamirFlat)).extracting(Bill::getMonth)
-                .containsExactly(NOVEMBER, OCTOBER, SEPTEMBER);
+        assertThat(bill.getDueDate()).isEqualTo(LocalDate.of(2026, 9, 17));
+        assertThat(billingRunService.run(SEPTEMBER, null).billsCreated()).isEqualTo(47);
+        assertThat(ledgerRepository.findByFlatIdOrderByEntryDateAscIdAsc(swatiFlat))
+                .extracting(LedgerEntry::getDebit).containsExactly(new BigDecimal("6370.00"));
     }
 
     private List<BillingRunResult> runSeptemberToNovember() {
