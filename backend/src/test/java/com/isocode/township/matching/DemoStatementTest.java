@@ -109,6 +109,12 @@ class DemoStatementTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void residentIsForbiddenFromTheDemoStatement() throws Exception {
+        mockMvc.perform(get("/api/desk/demo/bank-statement.csv").cookie(sessions.sessionFor(TestSessions.NEERAJ)))
+                .andExpect(status().isForbidden());
+    }
+
     private Set<MatchDecision> decisions(byte[] statement) {
         return match(statement).stream().map(MatchResult::decision).collect(Collectors.toSet());
     }

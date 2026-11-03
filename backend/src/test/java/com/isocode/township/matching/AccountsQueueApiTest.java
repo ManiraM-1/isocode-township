@@ -188,14 +188,23 @@ class AccountsQueueApiTest {
     @Test
     void residentsCannotActOnTheQueueOrSearchFlats() throws Exception {
         Cookie resident = sessions.sessionFor(TestSessions.SWATI);
+        Long ownFlat = flatRepository.findByCode("T12-0408").orElseThrow().getId();
+        long paymentsBefore = paymentRepository.count();
 
         mockMvc.perform(post("/api/desk/bank-rows/{id}/confirm", rowIds.get(7)).with(sameOriginCsrf()).cookie(resident))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/desk/bank-rows/{id}/assign", rowIds.get(7)).with(sameOriginCsrf()).cookie(resident)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("flatId", ownFlat, "note", "mine"))))
                 .andExpect(status().isForbidden());
         mockMvc.perform(post("/api/desk/bank-rows/{id}/ignore", rowIds.get(7)).with(sameOriginCsrf()).cookie(resident)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"not mine\"}"))
                 .andExpect(status().isForbidden());
         mockMvc.perform(get("/api/desk/flats/search").param("q", "T12").cookie(resident))
                 .andExpect(status().isForbidden());
+
+        assertThat(paymentRepository.count()).isEqualTo(paymentsBefore);
+        assertThat(queueRowNos()).containsKey(7);
     }
 
     private ResultActions confirm(int rowNo) throws Exception {

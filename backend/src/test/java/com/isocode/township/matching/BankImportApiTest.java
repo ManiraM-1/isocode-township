@@ -189,9 +189,13 @@ class BankImportApiTest {
     void residentsCannotImportOrSeeImportsOrTheQueue() throws Exception {
         Cookie resident = sessions.sessionFor(TestSessions.AAMIR);
 
+        long importId = json(upload(staff, "statement.csv", sample)).get("summary").get("id").asLong();
+
         upload(resident, "statement.csv", sample).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/desk/bank-imports").cookie(resident)).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/desk/bank-imports/{id}", importId).cookie(resident)).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/desk/accounts-queue").cookie(resident)).andExpect(status().isForbidden());
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM bank_import", Integer.class)).isEqualTo(1);
     }
 
     @Test
