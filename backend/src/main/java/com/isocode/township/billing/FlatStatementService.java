@@ -14,7 +14,6 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,17 +23,17 @@ public class FlatStatementService {
 
     private final FlatRepository flatRepository;
     private final BillRepository billRepository;
-    private final LateFeeChargeRepository chargeRepository;
+    private final LateInterestService lateInterestService;
     private final LedgerEntryRepository ledgerRepository;
     private final SocietySettingsRepository settingsRepository;
     private final Clock clock;
 
     public FlatStatementService(FlatRepository flatRepository, BillRepository billRepository,
-                                LateFeeChargeRepository chargeRepository, LedgerEntryRepository ledgerRepository,
+                                LateInterestService lateInterestService, LedgerEntryRepository ledgerRepository,
                                 SocietySettingsRepository settingsRepository, Clock clock) {
         this.flatRepository = flatRepository;
         this.billRepository = billRepository;
-        this.chargeRepository = chargeRepository;
+        this.lateInterestService = lateInterestService;
         this.ledgerRepository = ledgerRepository;
         this.settingsRepository = settingsRepository;
         this.clock = clock;
@@ -46,7 +45,7 @@ public class FlatStatementService {
         BigDecimal balance = Money.rounded(ledgerRepository.balanceOf(flatId));
         List<Bill> unpaidBills = billRepository.findUnpaidByFlat(flatId);
 
-        LocalDate oldestUnpaidDueDate = unpaidBills.isEmpty() ? null : unpaidBills.getFirst().getDueDate();
+        LocalDate oldestUnpaidDueDate = unpaidBills.stream().map(Bill::getDueDate).min(LocalDate::compareTo).orElse(null);
         long daysOverdue = oldestUnpaidDueDate != null && today.isAfter(oldestUnpaidDueDate)
                 ? ChronoUnit.DAYS.between(oldestUnpaidDueDate, today)
                 : 0;
@@ -57,7 +56,7 @@ public class FlatStatementService {
                 today,
                 balance.max(Money.ZERO),
                 balance.negate().max(Money.ZERO),
-                accruedLateFee(unpaidBills, today),
+                accruedLateFee(flatId, today),
                 oldestUnpaidDueDate,
                 daysOverdue);
     }
@@ -84,19 +83,15 @@ public class FlatStatementService {
         return lines;
     }
 
-    private BigDecimal accruedLateFee(List<Bill> unpaidBills, LocalDate today) {
-        if (unpaidBills.isEmpty()) {
+    private BigDecimal accruedLateFee(Long flatId, LocalDate today) {
+        List<Bill> candidates = billRepository.findInterestCandidatesForFlat(flatId, today);
+        if (candidates.isEmpty()) {
             return Money.ZERO;
         }
         BigDecimal annualPct = settingsRepository.current().getLateInterestPctPerAnnum();
-        Map<Long, LocalDate> lastChargedDays = chargeRepository.lastChargedDayByBill(
-                unpaidBills.stream().map(Bill::getId).toList());
-        BigDecimal accrued = Money.ZERO;
-        for (Bill bill : unpaidBills) {
-            LocalDate startsAfter = LateFeeCalculator.interestStartsAfter(bill.getDueDate(), lastChargedDays.get(bill.getId()));
-            accrued = accrued.add(LateFeeCalculator.interest(bill.principalOutstanding(), annualPct, startsAfter, today));
-        }
-        return accrued;
+        return lateInterestService.unchargedInterest(candidates, today, annualPct).stream()
+                .map(BillInterest::amount)
+                .reduce(Money.ZERO, BigDecimal::add);
     }
 
     private Flat requireFlat(Long flatId) {
