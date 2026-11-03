@@ -8,4 +8,6 @@ public interface FlatMemberRepository extends JpaRepository<FlatMember, Long> {
     List<FlatMember> findByFlatIdAndActiveTrue(Long flatId);
 
     List<FlatMember> findByUserIdAndActiveTrue(Long userId);
+
+    boolean existsByFlatIdAndUserIdAndActiveTrueAndUserActiveTrue(Long flatId, Long userId);
 }

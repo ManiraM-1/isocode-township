@@ -43,7 +43,7 @@ Seeder (`DemoDataSeeder`, runs only when `APP_DEMO_MODE=true` and the `flat` tab
 Acceptance: a test runs the seeder on a fixed clock and asserts the three brief flats, their areas and member relations exactly.
 Commit: `feat(core): add schema for towers, flats, users and settings with demo seed`
 
-### [ ] Step 3: Sign-in with OTP and roles
+### [x] Step 3: Sign-in with OTP and roles
 - `POST /api/auth/otp/request {phone}`: validates E.164 Indian mobile; creates `otp_challenge(id, phone, code_hash (BCrypt), expires_at = now+5 min, attempts, consumed_at)`; writes the code to `outbox_message`. Rate limit: max 3 requests per phone per 10 minutes → 429. Unknown phone returns the same 200 response as a known one (no account enumeration). In demo mode only, the response includes `demoOtp`.
 - `POST /api/auth/otp/verify {phone, code}`: max 5 attempts per challenge, then locked; expired or consumed codes rejected. On success sets an httpOnly, Secure, SameSite=Lax cookie `session` holding a JWT (12 h, claims: user id, role) and returns `/me`.
 - `GET /api/me` → `{id, name, role, isDutyManager, flats:[{id, code, relation}]}`. `POST /api/auth/logout` clears the cookie.
