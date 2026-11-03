@@ -1,5 +1,6 @@
 package com.isocode.township.common;
 
+import com.isocode.township.matching.KnownUpiIdDemoSeeder;
 import com.isocode.township.payment.DemoHistorySeeder;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -14,9 +15,13 @@ public class DemoDataSeedRunner implements ApplicationRunner {
     private final DemoDataSeeder coreSeeder;
     private final DemoHistorySeeder historySeeder;
 
-    public DemoDataSeedRunner(DemoDataSeeder coreSeeder, DemoHistorySeeder historySeeder) {
+    private final KnownUpiIdDemoSeeder upiIdSeeder;
+
+    public DemoDataSeedRunner(DemoDataSeeder coreSeeder, DemoHistorySeeder historySeeder,
+                              KnownUpiIdDemoSeeder upiIdSeeder) {
         this.coreSeeder = coreSeeder;
         this.historySeeder = historySeeder;
+        this.upiIdSeeder = upiIdSeeder;
     }
 
     @Override
@@ -24,6 +29,7 @@ public class DemoDataSeedRunner implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         if (coreSeeder.seedIfEmpty()) {
             historySeeder.seed();
+            upiIdSeeder.seed();
         }
     }
 }
