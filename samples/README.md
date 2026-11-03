@@ -13,25 +13,28 @@ Known UPI IDs that Step 8 seeds for this file: `aamir.s@okicici` → T21-1601, `
 | Row | What it is | Signals | Expected decision (Step 7) |
 |---|---|---|---|
 | 2 | Electricity bill paid out, ₹1,25,640.00 | debit | `NON_CREDIT` |
-| 3 | Aamir, ₹5,660.00, reference T21-1601, known UPI ID | R + V + A agree | `AUTO_POSTED` |
-| 4 | Swati, ₹6,370.00, reference `T12/0408` | R + A agree | `AUTO_POSTED` |
+| 3 | Aamir, ₹5,660.00, reference T21-1601, known UPI ID | R + V agree (A agrees too) | `AUTO_POSTED` |
+| 4 | Swati, ₹6,370.00, reference `T12/0408` | R + unique A on the same flat | `AUTO_POSTED` |
 | 5 | SMS charges, ₹59.00 | debit | `NON_CREDIT` |
-| 6 | ₹6,190.00, lowercase reference `t26 1203` | R + A agree | `AUTO_POSTED` |
+| 6 | ₹6,190.00, lowercase reference `t26 1203` | R + unique A on the same flat | `AUTO_POSTED` |
 | 7 | ₹3,000.00, `TOWER 15 FLAT 0702` | R only | `SUGGESTED` |
 | 8 | ₹1,500.00 from a known UPI ID, no reference | V only | `SUGGESTED` |
-| 9 | ₹4,070.00, the remaining principal of one T12-1108 bill | A only | `SUGGESTED` |
+| 9 | ₹4,070.00, the remaining principal of one T12-1108 bill | unique A only | `SUGGESTED` |
 | 10 | ₹6,207.50, equal to one bill of T21-0104 and one of T21-1402 | A on two flats | `UNMATCHED` with both as candidates |
-| 11 | Aamir's UPI ID, reference says T07-1203 | V and R disagree | `CONFLICT` |
-| 12 | ₹2,000.00 part payment, reference T21-0303, known UPI ID | R + V agree | `AUTO_POSTED` |
-| 13 | One payment naming T07-1401 and T07-1407 | R ambiguous | `CONFLICT` |
-| 14 | Gateway settlement `PGTEST-JD9EP9VAU8CP`, ₹3,000.00 | G, amount equal | `RECONCILED_GATEWAY` |
-| 15 | Gateway settlement `PGTEST-SLAMTBLQNZXA`, ₹10,412.50 (seeded ₹10,432.50) | G, amount differs | `CONFLICT` |
-| 16 | Neeraj, UTR 699747290912 already posted | UTR seen | `DUPLICATE` |
-| 17 | ₹10,000.00, reference T15-1605, known UPI ID, owes ₹7,670.00 | R + V agree, overpayment | `AUTO_POSTED` (₹2,330.00 advance) |
-| 18 | Caterer refund, ₹1,23,450.00 | none | `UNMATCHED` |
-| 19 | Exact repeat of row 18 | row hash seen | `DUPLICATE` |
-| 20 | Amount `11,537.5O` (letter O) | — | row error, file still imports |
+| 11 | ₹6,207.50, reference `T21 1402` | R; A on two flats including T21-1402 is not agreement | `SUGGESTED` |
+| 12 | Aamir's UPI ID, reference says T07-1203 | R and V disagree | `CONFLICT` |
+| 13 | ₹4,070.00, reference T21-0303, known UPI ID for T21-0303 | R + V agree; A points to T12-1108 and is ignored with a reason | `AUTO_POSTED` |
+| 14 | One payment naming T07-1401 and T07-1407 | R ambiguous | `CONFLICT` |
+| 15 | Gateway settlement `PGTEST-JD9EP9VAU8CP`, ₹3,000.00 | G, amount equal | `RECONCILED_GATEWAY` |
+| 16 | Gateway settlement `PGTEST-SLAMTBLQNZXA`, ₹10,412.50 (seeded ₹10,432.50) | G, amount differs | `CONFLICT` |
+| 17 | Neeraj, UTR 699747290912 already posted | UTR already posted | `DUPLICATE` |
+| 18 | ₹10,000.00, reference T15-1605, known UPI ID, owes ₹7,670.00 | R + V agree, overpayment | `AUTO_POSTED` (₹2,330.00 advance) |
+| 19 | Cash deposit ₹3,500.00, reference T15-0801, no UTR | R only | `SUGGESTED` |
+| 20 | Exact repeat of row 19, still no UTR | same row hash, no UTR | `POSSIBLE_DUPLICATE` of row 19 (queued, never auto-posted) |
+| 21 | Caterer refund, ₹1,23,450.00 | none | `UNMATCHED` |
+| 22 | Exact repeat of row 21 with the same reference | UTR repeated inside the file | `DUPLICATE` |
+| 23 | Amount `11,537.5O` (letter O) | — | row error, file still imports |
 
-Totals: 5 auto-posted, 1 reconciled, 3 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 2 non-credit, 1 error (19 rows).
+Totals: 5 auto-posted, 1 reconciled, 5 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 1 possible duplicate, 2 non-credit, 1 error (22 rows).
 
 `SampleStatementTest` checks that every seeded value this file relies on exists and that the parser reads it as described.

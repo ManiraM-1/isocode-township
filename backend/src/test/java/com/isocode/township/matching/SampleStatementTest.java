@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class SampleStatementTest {
 
-    private static final Path SAMPLE = Path.of("..", "samples", "bank-statement-demo.csv");
+    static final Path SAMPLE = Path.of("..", "samples", "bank-statement-demo.csv");
 
     @Autowired
     private DemoDataSeeder coreSeeder;
@@ -54,8 +54,8 @@ class SampleStatementTest {
         byte[] start = Files.readAllBytes(SAMPLE);
 
         assertThat(new byte[] {start[0], start[1], start[2]}).containsExactly(0xEF, 0xBB, 0xBF);
-        assertThat(statement.totalRows()).isEqualTo(19);
-        assertThat(statement.errors()).extracting(RowError::rowNo).containsExactly(20);
+        assertThat(statement.totalRows()).isEqualTo(22);
+        assertThat(statement.errors()).extracting(RowError::rowNo).containsExactly(23);
         assertThat(statement.rows()).filteredOn(row -> row.kind() == RowKind.NON_CREDIT)
                 .extracting(StatementRow::rowNo).containsExactly(2, 5);
         assertThat(rows.get(2).debit()).isEqualTo(new BigDecimal("125640.00"));
@@ -68,19 +68,26 @@ class SampleStatementTest {
 
     @Test
     void gatewaySettlementRowsUseSeededReferences() {
-        assertThat(rows.get(14).gatewayRef()).contains("PGTEST-JD9EP9VAU8CP");
-        assertThat(seededGatewayAmount("PGTEST-JD9EP9VAU8CP")).isEqualByComparingTo(rows.get(14).credit());
+        assertThat(rows.get(15).gatewayRef()).contains("PGTEST-JD9EP9VAU8CP");
+        assertThat(seededGatewayAmount("PGTEST-JD9EP9VAU8CP")).isEqualByComparingTo(rows.get(15).credit());
 
-        assertThat(rows.get(15).gatewayRef()).contains("PGTEST-SLAMTBLQNZXA");
-        assertThat(seededGatewayAmount("PGTEST-SLAMTBLQNZXA")).isNotEqualByComparingTo(rows.get(15).credit());
+        assertThat(rows.get(16).gatewayRef()).contains("PGTEST-SLAMTBLQNZXA");
+        assertThat(seededGatewayAmount("PGTEST-SLAMTBLQNZXA")).isNotEqualByComparingTo(rows.get(16).credit());
     }
 
     @Test
-    void duplicateRowsAreAnAlreadyPostedUtrAndAnExactRepeat() {
-        assertThat(rows.get(16).utr()).contains("699747290912");
+    void duplicateRowsAreAPostedUtrAndAUtrRepeatedInTheFile() {
+        assertThat(rows.get(17).utr()).contains("699747290912");
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM payment WHERE utr = ?", Integer.class,
                 "699747290912")).isEqualTo(1);
-        assertThat(rows.get(19).rowHash()).isEqualTo(rows.get(18).rowHash());
+        assertThat(rows.get(22).utr()).isPresent().isEqualTo(rows.get(21).utr());
+    }
+
+    @Test
+    void possibleDuplicateIsARepeatedRowWithoutAUtr() {
+        assertThat(rows.get(19).utr()).isEmpty();
+        assertThat(rows.get(20).utr()).isEmpty();
+        assertThat(rows.get(20).rowHash()).isEqualTo(rows.get(19).rowHash());
     }
 
     @Test
@@ -90,11 +97,13 @@ class SampleStatementTest {
         assertThat(flatsWithBillRemaining(rows.get(6).credit())).containsExactly("T26-1203");
         assertThat(flatsWithBillRemaining(rows.get(9).credit())).containsExactly("T12-1108");
         assertThat(flatsWithBillRemaining(rows.get(10).credit())).containsExactly("T21-0104", "T21-1402");
+        assertThat(flatsWithBillRemaining(rows.get(11).credit())).containsExactly("T21-0104", "T21-1402");
+        assertThat(flatsWithBillRemaining(rows.get(13).credit())).containsExactly("T12-1108");
     }
 
     @Test
     void rowsMeantToHaveNoAmountSignalMatchNoBillAndNoFlatTotal() {
-        for (int rowNo : List.of(7, 8, 11, 12, 13, 17, 18)) {
+        for (int rowNo : List.of(7, 8, 12, 14, 18, 19, 21)) {
             BigDecimal amount = rows.get(rowNo).credit();
             assertThat(flatsWithBillRemaining(amount)).as("row %d bill", rowNo).isEmpty();
             assertThat(flatsWithOutstanding(amount)).as("row %d outstanding", rowNo).isEmpty();
@@ -105,22 +114,22 @@ class SampleStatementTest {
     void upiIdsAreExtractedForTheRowsThatCarryThem() {
         assertThat(rows.get(3).upiId()).contains("aamir.s@okicici");
         assertThat(rows.get(8).upiId()).contains("dhole.home@okaxis");
-        assertThat(rows.get(11).upiId()).contains("aamir.s@okicici");
-        assertThat(rows.get(12).upiId()).contains("kale.family@okaxis");
-        assertThat(rows.get(17).upiId()).contains("nene.home@okicici");
+        assertThat(rows.get(12).upiId()).contains("aamir.s@okicici");
+        assertThat(rows.get(13).upiId()).contains("kale.family@okaxis");
+        assertThat(rows.get(18).upiId()).contains("nene.home@okicici");
     }
 
     @Test
     void everyFlatCodeTheFileMentionsExistsInTheSeed() {
-        List<String> mentioned = List.of("T21-1601", "T12-0408", "T26-1203", "T15-0702", "T07-1203", "T21-0303",
-                "T07-1401", "T07-1407", "T15-1605", "T26-2007", "T26-0807");
+        List<String> mentioned = List.of("T21-1601", "T12-0408", "T26-1203", "T15-0702", "T21-1402", "T07-1203",
+                "T21-0303", "T07-1401", "T07-1407", "T15-1605", "T15-0801", "T26-2007", "T26-0807");
 
         assertThat(jdbcTemplate.queryForList("SELECT code FROM flat", String.class)).containsAll(mentioned);
     }
 
     @Test
     void overpaymentRowIsMoreThanTheFlatOwes() {
-        assertThat(outstandingOf("T15-1605")).isLessThan(rows.get(17).credit());
+        assertThat(outstandingOf("T15-1605")).isLessThan(rows.get(18).credit());
     }
 
     private BigDecimal seededGatewayAmount(String gatewayRef) {
