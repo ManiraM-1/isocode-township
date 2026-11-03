@@ -55,6 +55,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.CONFLICT, "Conflict", ex.getMessage());
     }
 
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ProblemDetail handleUnauthenticated(UnauthenticatedException ex) {
+        ProblemDetail problem = problem(HttpStatus.UNAUTHORIZED, "Sign-in failed", ex.getMessage());
+        ex.properties().forEach(problem::setProperty);
+        return problem;
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ProblemDetail handleTooManyRequests(TooManyRequestsException ex) {
+        return problem(HttpStatus.TOO_MANY_REQUESTS, "Too many requests", ex.getMessage());
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
         return problem(HttpStatus.FORBIDDEN, "Forbidden", "You do not have access to this resource.");

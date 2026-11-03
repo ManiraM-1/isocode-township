@@ -27,6 +27,11 @@ spring:
 app:
   timezone: ${APP_TIMEZONE:Asia/Kolkata}
   demo-mode: ${APP_DEMO_MODE:false}
+  otp:
+    ttl: 5m
+    max-attempts: 5
+    max-requests-per-window: 3
+    request-window: 10m
   jwt:
     secret: ${JWT_SECRET}
   gemini:
