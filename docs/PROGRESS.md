@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 8
+**Next step:** Step 9
 
 ---
 
@@ -75,3 +75,13 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: none beyond A9 (rewritten) and A28 (already committed).
 - Open items: none for the engine; Step 8 builds the context from the database, persists the results and posts AUTO_POSTED rows.
 - Next step: Step 8
+
+## 2026-11-03: Step 7 follow-up, large amount guard
+- An otherwise auto-posted row becomes `SUGGESTED` when its amount exceeds the flat's dues plus one month's bill (`society_settings.auto_post_limit_months`, default 1, migration `V3_1`), with the reason "Amount ₹70,000.00 is much higher than T21-1601's dues of ₹16,368.85; check before posting" (A29). Sample row 23 covers it; the sample now has 23 rows (6 suggested). 276 tests.
+
+## 2026-11-03: Step 8, Bank import and the accounts queue
+- Built: Flyway `V4__bank_matching.sql`: `bank_import` (counts per decision), `bank_row` (every row with decision, reasons, candidates, confidence, non-unique `row_hash` index, `duplicate_of_row_id`, payment link, resolution with who/when/note, parse error), `known_vpa` (lowercase, unique), `late_fee_adjustment` (append-only). Demo seed adds known UPI IDs for about a third of flats, including the sample's four. `MatchContextFactory` builds the context from the database (flats, monthly bills, known UPI IDs, unpaid bill remainders, outstanding, gateway payments, posted UTRs, earlier bank rows). `BankImportService` (HELPDESK; .csv only, ≤ 5 MB, not empty) parses, matches, stores every row, links repeats, auto-posts through `PaymentPostingService` and audits, all in one transaction; future-dated rows are held (A30). Accounts queue: `GET /api/desk/accounts-queue` (SUGGESTED, CONFLICT, UNMATCHED, POSSIBLE_DUPLICATE, oldest first); `POST /api/desk/bank-rows/{id}/confirm|assign|ignore` lock the row, post at most once (409 when resolved or not queued, 409 if the UTR was posted meanwhile), record who/when/note, audit, and on confirm/assign learn the UPI ID unless another flat owns it (then a warning, no overwrite). `GET /api/desk/flats/search?q=` by code or resident name. **Back-dated payments:** `LateFeeCorrection`, called from `PaymentPostingService`, recomputes posted charge periods covered by the payment and posts the excess as a REVERSAL ledger credit linked to a `late_fee_adjustment`; the charge's payable amount drops accordingly. **Demo statement:** `DemoStatementGenerator` builds one row per decision from current data; `GET /api/desk/demo/bank-statement.csv` exists only in demo mode (A31).
+- Tests: 308 passing. Plan cases: importing the sample gives exactly the README's decision for all 23 rows and the expected counts; importing it again posts nothing (19 duplicates, 2 possible duplicates); no queued row creates a payment; confirm posts exactly once and learns the UPI ID; assign to the chosen flat works against the suggestion and is audited; residents get 403 on import, list, queue, actions and search; the generated statement produces every decision type, still does after an import, and re-uploading it posts nothing; the demo endpoint does not exist outside demo mode. Back-dated: ₹3,000 dated 20 Sep after the October run reverses ₹18.99 (charge 73.30 → 54.31); a second payment dated 25 Sep reverses only the further ₹3.45. Real-server smoke test in demo mode: download, upload (every decision), re-upload (nothing posted), fresh download (every decision again).
+- New assumptions: A29, A30, A31.
+- Open items: (1) if a late fee was already fully paid and a later back-dated payment reduces it, the overpaid part shows as ledger credit but is not yet re-applied to the next bill as advance. (2) The import holds the whole file in memory (5 MB cap keeps this small).
+- Next step: Step 9

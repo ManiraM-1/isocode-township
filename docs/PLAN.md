@@ -131,7 +131,7 @@ When A points to a different flat than R or V, it is ignored for the decision an
 Tests: one test per table row, plus: reference with lowercase and spaces; every accepted reference format; VPA known for flat A but reference says flat B → CONFLICT; R + V agree while A points elsewhere → AUTO_POSTED with the "ignored" reason; R alone with A elsewhere → SUGGESTED with the "ignored" reason; V alone → SUGGESTED; R + unique A on the same flat → AUTO_POSTED; V + unique A on the same flat → AUTO_POSTED; R + A on several flats including the R flat → SUGGESTED; partial payment with reference + known VPA → AUTO_POSTED; amount equal for two flats → UNMATCHED with both candidates; overpayment with two agreeing signals → AUTO_POSTED; UTR repeated inside one file → DUPLICATE; same hash without UTR → POSSIBLE_DUPLICATE; and a performance test: 3,000 generated rows against 2,400 flats match in under 3 seconds.
 Commit: `feat(matching): decide bank row matches from reference, UPI ID and amount`
 
-### [ ] Step 8: Bank import and the accounts queue
+### [x] Step 8: Bank import and the accounts queue
 Flyway `V4__bank_matching.sql`:
 - `bank_import(id, file_name, file_sha256, uploaded_by, uploaded_at, total_rows, auto_posted, reconciled, suggested, conflicts, unmatched, duplicates, possible_duplicates, non_credit, errors)`
 - `bank_row(id, import_id, row_no, txn_date, description, reference, utr, vpa, gateway_ref, amount, row_hash (non-unique index), duplicate_of_row_id NULL FK bank_row, decision, suggested_flat_id, candidates JSONB, confidence, reasons JSONB, payment_id, resolved_by, resolved_at, resolution_note, parse_error)`. A row hash can repeat (two genuine identical transfers on one day); `duplicate_of_row_id` links a `POSSIBLE_DUPLICATE` to the row it repeats.
