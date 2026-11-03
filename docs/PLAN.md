@@ -150,7 +150,7 @@ Accounts queue (rows in SUGGESTED, CONFLICT, UNMATCHED, POSSIBLE_DUPLICATE; a po
 Tests (integration): importing the demo CSV gives the expected counts per decision; importing it again posts nothing new, reports rows with a UTR as duplicates and queues rows without a UTR as possible duplicates; no row in SUGGESTED/CONFLICT/UNMATCHED/POSSIBLE_DUPLICATE ever creates a payment; confirm posts exactly once and learns the VPA; assign to the wrong-but-chosen flat works and is audited; residents get 403 on all of these; the generated demo statement produces every decision type.
 Commit: `feat(matching): import bank statements, auto-post confident matches and queue the rest`
 
-### [ ] Step 9: Complaints
+### [x] Step 9: Complaints
 Flyway `V5__complaints.sql`:
 - `complaint(id, ref_no UNIQUE 'CMP-YYMM-NNNN', flat_id, raised_by, description, photo BYTEA NULL, photo_content_type, category, urgency, ai_category, ai_urgency, ai_confidence, ai_summary, classified_by ('AI','RULES_FALLBACK'), needs_review, safety_escalated, safety_terms TEXT[], status, assignee_id, parent_id NULL, created_at, first_response_at, first_response_due_at, resolve_due_at, resolved_at, closed_at, reopen_count, rating, rating_comment)`
 - `complaint_event(id, complaint_id, type, actor_user_id, from_value, to_value, note, created_at)`

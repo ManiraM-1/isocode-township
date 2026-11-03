@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 9
+**Next step:** Step 10
 
 ---
 
@@ -85,3 +85,13 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: A29, A30, A31.
 - Open items: (1) if a late fee was already fully paid and a later back-dated payment reduces it, the overpaid part shows as ledger credit but is not yet re-applied to the next bill as advance. (2) The import holds the whole file in memory (5 MB cap keeps this small).
 - Next step: Step 9
+
+## 2026-11-03: Step 8 follow-up, resident 403 coverage
+- Added the missing resident-forbidden checks for assign, import details and the demo statement; every bank and queue endpoint now has one, and the queue test asserts the attempts change nothing. 309 tests.
+
+## 2026-11-03: Step 9, Complaints
+- Built: Flyway `V5__complaints.sql`: complaint (ref `CMP-YYMM-NNNN` from a sequence; description 10–1,000 chars; photo with its detected type; classification fields; status; assignee; parent; SLA due times; reopen count; rating allowed only when Closed and required then), complaint_event, escalation. Pure rules: `ComplaintStateMachine` (A15/A32; illegal moves are 409 with a plain message), `SlaTargets` (A14 from `society_settings`), `AutoAssigner` (specialist with fewest open complaints, general desk only when no specialist, A32), `ImageType` (JPEG/PNG/WebP by magic bytes). Resident: `POST /api/flats/{id}/complaints` (multipart; stub classifier gives Other/Medium until Step 10; photo ≤ 5 MB), list, `GET /api/complaints/{id}` with timeline and the actions this viewer may take, photo (member or staff), close with rating 1–5, reopen with reason (same assignee, count +1, resolution clock restarts). Help desk: `GET /api/desk/complaints?lane=&status=&category=&assigneeId=&tower=` (lanes SAFETY, NEEDS_REVIEW, OPEN sorted by next deadline so overdue first, AWAITING_RESIDENT), detail, `PATCH status`, `PATCH assignee` (active staff only), `POST comments`; the first staff action of any kind sets the first response time. Form errors come back per field. Demo seed: 30 complaints over the last two months with real backdated events: Swati's open water leak (T12-0408, in progress, overdue), Neeraj and Aamir only closed and rated, 17 closed with ratings, 4 awaiting the resident, 2 reopened (one open again, one closed), in-progress and assigned ones, several first-response breaches; no lift complaints in T07 (Step 11 seeds those).
+- Tests: 396 passing: every legal and illegal move for staff and resident (50 cases), timers, assignment, photo detection; raise with and without photo, non-photo and oversized photo rejected, description length; resident 403 on other flats' complaints, lists, photos, close and reopen; staff 403 on close and reopen; close only from Resolved and only with a rating; reopen counts and returns to the same assignee; desk status flow, first response, illegal moves, reassignment, comments, lanes, filters, overdue-first ordering, resident 403 on every desk endpoint; seed shape. Real-server smoke test in demo mode matched.
+- New assumptions: A32.
+- Open items: the classifier is a stub until Step 10; lane SAFETY and NEEDS_REVIEW fill in Step 10.
+- Next step: Step 10
