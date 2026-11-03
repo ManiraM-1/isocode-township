@@ -63,6 +63,13 @@ public class Bill {
         return amount.subtract(amountPaid);
     }
 
+    public void applyPayment(BigDecimal allocated) {
+        if (allocated.signum() <= 0 || allocated.compareTo(principalOutstanding()) > 0) {
+            throw new IllegalArgumentException("Allocation must be positive and within the unpaid principal");
+        }
+        amountPaid = amountPaid.add(allocated);
+    }
+
     public boolean isFullyPaid() {
         return principalOutstanding().signum() == 0;
     }

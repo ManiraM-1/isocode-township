@@ -21,6 +21,7 @@ public class LedgerEntry {
 
     public static final String REF_BILL = "BILL";
     public static final String REF_LATE_FEE_CHARGE = "LATE_FEE_CHARGE";
+    public static final String REF_PAYMENT = "PAYMENT";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -77,6 +78,12 @@ public class LedgerEntry {
     public static LedgerEntry debitForBill(Bill bill, String description, Instant createdAt, Long createdBy) {
         return new LedgerEntry(bill.getFlatId(), bill.getMonth().atDay(1), LedgerEntryType.BILL,
                 bill.getAmount(), Money.ZERO, REF_BILL, bill.getId(), description, createdAt, createdBy);
+    }
+
+    public static LedgerEntry creditForPayment(Long flatId, Long paymentId, LocalDate paidOn, BigDecimal amount,
+                                               String description, Instant createdAt, Long createdBy) {
+        return new LedgerEntry(flatId, paidOn, LedgerEntryType.PAYMENT, Money.ZERO, amount,
+                REF_PAYMENT, paymentId, description, createdAt, createdBy);
     }
 
     public static LedgerEntry debitForLateFee(LateFeeCharge charge, String description, Instant createdAt,
