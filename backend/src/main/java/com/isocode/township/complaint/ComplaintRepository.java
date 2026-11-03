@@ -1,6 +1,7 @@
 package com.isocode.township.complaint;
 
 import jakarta.persistence.LockModeType;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,22 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Complaint c where c.id = :id")
     Optional<Complaint> findLockedById(@Param("id") Long id);
+
+    @Query("""
+            select c from Complaint c
+            where c.status in :statuses
+              and (:safetyOnly = false or c.safetyEscalated = true)
+              and (:reviewOnly = false or c.needsReview = true)
+              and (:category is null or c.category = :category)
+              and (:assigneeId is null or c.assigneeId = :assigneeId)
+              and (:towerCode is null or c.flatId in (select f.id from Flat f where f.tower.code = :towerCode))
+            """)
+    List<Complaint> search(@Param("statuses") Collection<ComplaintStatus> statuses,
+                           @Param("safetyOnly") boolean safetyOnly,
+                           @Param("reviewOnly") boolean reviewOnly,
+                           @Param("category") ComplaintCategory category,
+                           @Param("assigneeId") Long assigneeId,
+                           @Param("towerCode") String towerCode);
 
     @Query(value = "SELECT nextval('complaint_ref_seq')", nativeQuery = true)
     long nextRefSequence();
