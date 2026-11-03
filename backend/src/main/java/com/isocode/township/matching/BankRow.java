@@ -123,7 +123,9 @@ public class BankRow {
                 .toList();
         bankRow.confidence = result.confidence().map(Enum::name).orElse(null);
         bankRow.reasons = result.reasons();
-        bankRow.paymentId = result.gatewayPaymentId().orElse(null);
+        bankRow.paymentId = result.decision() == MatchDecision.RECONCILED_GATEWAY
+                ? result.gatewayPaymentId().orElse(null)
+                : null;
         return bankRow;
     }
 
