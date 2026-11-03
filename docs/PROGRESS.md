@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 2
+**Next step:** Step 3
 
 ---
 
@@ -28,3 +28,10 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: none.
 - Open items: unauthenticated requests currently get a plain 403 from Spring Security; Step 3 turns that into 401 problem details.
 - Next step: Step 2
+
+## 2026-11-03: Step 2, Data model and seed data
+- Built: Flyway `V1__core_schema.sql` with tower, flat, app_user, flat_member, society_settings (single row, defaults 6.50/sqft, due day 10, 21% p.a., A14 SLA minutes, AI threshold 0.60), audit_log, outbox_message. Database checks: positive area, flat code format `T00-0000`, E.164 phone, duty manager and skills only for staff, one membership per user per flat, one settings row. JPA entities and repositories in `flat`, `auth`, `common`; `ComplaintCategory` enum (A13) for staff skills. `DemoDataSeeder` (Random(42), timestamps from the injected Clock) seeds 6 towers, the 3 brief flats exactly, 45 more flats (650–1,800 sq ft, about 20% tenanted, about 25% with a family member) and the 6 help-desk staff; `DemoDataSeedRunner` runs it at startup only when `APP_DEMO_MODE=true` and the flat table is empty.
+- Tests: 24 passing (8 schema, 7 seeder incl. exact brief flats and determinism, 9 earlier). Integration tests now share one context and one Postgres container via `@IntegrationTest`.
+- New assumptions: none. Modelling note: the T12-0408 owner (Vivek Bhosale, fictional) and owners of other tenanted flats have no phone on file, so they cannot sign in. Non-demo seed residents use phones `+9191000xxxxx`.
+- Open items: audit_log and outbox_message entities are added in the steps that first write to them (Step 3 outbox, Step 5 audit).
+- Next step: Step 3

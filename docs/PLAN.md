@@ -23,7 +23,7 @@ Commit: `docs: add client brief, build plan and working rules`
 - Test: context loads against Testcontainers PostgreSQL.
 Commit: `chore(backend): scaffold Spring Boot service with Postgres and Flyway`
 
-### [ ] Step 2: Data model and seed data
+### [x] Step 2: Data model and seed data
 Flyway `V1__core_schema.sql` creates:
 - `tower(id, code UNIQUE, name)`
 - `flat(id, code UNIQUE, tower_id FK, area_sqft INT CHECK > 0)`
