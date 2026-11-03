@@ -8,6 +8,7 @@ public record FlatSummaryResponse(
         String flatCode,
         LocalDate asOf,
         BigDecimal outstanding,
+        BigDecimal overdue,
         BigDecimal advance,
         BigDecimal accruedLateFee,
         LocalDate oldestUnpaidDueDate,

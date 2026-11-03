@@ -64,6 +64,7 @@ class FlatBillingApiTest {
                 .andExpect(jsonPath("$.flatCode").value("T12-0408"))
                 .andExpect(jsonPath("$.asOf").value("2026-11-03"))
                 .andExpect(jsonPath("$.outstanding").value("19373.87"))
+                .andExpect(jsonPath("$.overdue").value("13003.87"))
                 .andExpect(jsonPath("$.advance").value("0.00"))
                 .andExpect(jsonPath("$.accruedLateFee").value("21.98"))
                 .andExpect(jsonPath("$.oldestUnpaidDueDate").value("2026-09-10"))

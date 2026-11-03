@@ -32,6 +32,8 @@ app:
     max-attempts: 5
     max-requests-per-window: 3
     request-window: 10m
+  payments:
+    max-amount-above-outstanding: 100000.00
   jwt:
     secret: ${JWT_SECRET}
     ttl: 12h

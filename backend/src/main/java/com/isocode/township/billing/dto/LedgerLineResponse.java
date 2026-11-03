@@ -11,5 +11,6 @@ public record LedgerLineResponse(
         String description,
         BigDecimal debit,
         BigDecimal credit,
-        BigDecimal runningBalance) {
+        BigDecimal runningBalance,
+        String receiptNo) {
 }

@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,16 +26,19 @@ public class FlatStatementService {
     private final FlatRepository flatRepository;
     private final BillRepository billRepository;
     private final LateInterestService lateInterestService;
+    private final OutstandingLateFees outstandingLateFees;
     private final LedgerEntryRepository ledgerRepository;
     private final SocietySettingsRepository settingsRepository;
     private final Clock clock;
 
     public FlatStatementService(FlatRepository flatRepository, BillRepository billRepository,
-                                LateInterestService lateInterestService, LedgerEntryRepository ledgerRepository,
-                                SocietySettingsRepository settingsRepository, Clock clock) {
+                                LateInterestService lateInterestService, OutstandingLateFees outstandingLateFees,
+                                LedgerEntryRepository ledgerRepository, SocietySettingsRepository settingsRepository,
+                                Clock clock) {
         this.flatRepository = flatRepository;
         this.billRepository = billRepository;
         this.lateInterestService = lateInterestService;
+        this.outstandingLateFees = outstandingLateFees;
         this.ledgerRepository = ledgerRepository;
         this.settingsRepository = settingsRepository;
         this.clock = clock;
@@ -50,11 +55,20 @@ public class FlatStatementService {
                 ? ChronoUnit.DAYS.between(oldestUnpaidDueDate, today)
                 : 0;
 
+        BigDecimal overduePrincipal = unpaidBills.stream()
+                .filter(bill -> today.isAfter(bill.getDueDate()))
+                .map(Bill::principalOutstanding)
+                .reduce(Money.ZERO, BigDecimal::add);
+        BigDecimal unpaidLateFees = outstandingLateFees.forFlat(flatId).stream()
+                .map(OutstandingLateFees.Balance::outstanding)
+                .reduce(Money.ZERO, BigDecimal::add);
+
         return new FlatSummaryResponse(
                 flat.getId(),
                 flat.getCode(),
                 today,
                 balance.max(Money.ZERO),
+                overduePrincipal.add(unpaidLateFees),
                 balance.negate().max(Money.ZERO),
                 accruedLateFee(flatId, today),
                 oldestUnpaidDueDate,
@@ -73,12 +87,18 @@ public class FlatStatementService {
 
     public List<LedgerLineResponse> ledger(Long flatId) {
         requireFlat(flatId);
+        Map<Long, String> receiptByPayment = ledgerRepository.findReceiptsForFlat(flatId).stream()
+                .collect(Collectors.toMap(LedgerEntryRepository.PaymentReceipt::getPaymentId,
+                        LedgerEntryRepository.PaymentReceipt::getReceiptNo));
         BigDecimal runningBalance = Money.ZERO;
         List<LedgerLineResponse> lines = new ArrayList<>();
         for (LedgerEntry entry : ledgerRepository.findByFlatIdOrderByEntryDateAscIdAsc(flatId)) {
             runningBalance = runningBalance.add(entry.signedAmount());
+            String receiptNo = LedgerEntry.REF_PAYMENT.equals(entry.getRefType())
+                    ? receiptByPayment.get(entry.getRefId())
+                    : null;
             lines.add(new LedgerLineResponse(entry.getId(), entry.getEntryDate(), entry.getType(),
-                    entry.getDescription(), entry.getDebit(), entry.getCredit(), runningBalance));
+                    entry.getDescription(), entry.getDebit(), entry.getCredit(), runningBalance, receiptNo));
         }
         return lines;
     }
