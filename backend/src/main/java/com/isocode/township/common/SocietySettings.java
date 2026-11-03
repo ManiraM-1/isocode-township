@@ -51,7 +51,14 @@ public class SocietySettings {
     @Column(name = "ai_confidence_threshold", nullable = false, precision = 3, scale = 2)
     private BigDecimal aiConfidenceThreshold;
 
+    @Column(name = "auto_post_limit_months", nullable = false)
+    private int autoPostLimitMonths;
+
     protected SocietySettings() {
+    }
+
+    public int getAutoPostLimitMonths() {
+        return autoPostLimitMonths;
     }
 
     public BigDecimal getRatePerSqft() {

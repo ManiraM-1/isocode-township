@@ -135,7 +135,7 @@ public final class PaymentMatcher {
         if (referenceFlat.isPresent() && upiFlat.isPresent()) {
             Long flat = referenceFlat.get();
             explainAmountBeside(flat, amountMatches, amountFlats, row, context, reasons, "reference and UPI ID agree");
-            return confident(row, MatchDecision.AUTO_POSTED, flat, Confidence.HIGH, reasons);
+            return autoPostUnlessUnusuallyLarge(row, context, flat, reasons);
         }
 
         Optional<Long> singleSignal = referenceFlat.or(() -> upiFlat);
@@ -143,7 +143,7 @@ public final class PaymentMatcher {
             Long flat = singleSignal.get();
             if (amountFlats.equals(List.of(flat))) {
                 reasons.add(amountReason(row, context, amountMatches.getFirst()));
-                return confident(row, MatchDecision.AUTO_POSTED, flat, Confidence.HIGH, reasons);
+                return autoPostUnlessUnusuallyLarge(row, context, flat, reasons);
             }
             String basis = referenceFlat.isPresent()
                     ? "the reference names " + context.codeOf(flat)
@@ -165,6 +165,19 @@ public final class PaymentMatcher {
         }
         reasons.add("No flat reference, known UPI ID or matching amount");
         return result(row, MatchDecision.UNMATCHED, reasons);
+    }
+
+    private static MatchResult autoPostUnlessUnusuallyLarge(StatementRow row, MatchContext context, Long flat,
+                                                            List<String> reasons) {
+        boolean tooLarge = context.autoPostLimit(flat)
+                .map(limit -> row.credit().compareTo(limit) > 0)
+                .orElse(false);
+        if (tooLarge) {
+            reasons.add("Amount " + IndianRupees.format(row.credit()) + " is much higher than " + context.codeOf(flat)
+                    + "'s dues of " + IndianRupees.format(context.outstandingOf(flat)) + "; check before posting");
+            return confident(row, MatchDecision.SUGGESTED, flat, Confidence.MEDIUM, reasons);
+        }
+        return confident(row, MatchDecision.AUTO_POSTED, flat, Confidence.HIGH, reasons);
     }
 
     private static void explainAmountBeside(Long flat, List<AmountMatch> amountMatches, List<Long> amountFlats,

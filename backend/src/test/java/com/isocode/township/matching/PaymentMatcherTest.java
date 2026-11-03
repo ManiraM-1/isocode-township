@@ -247,6 +247,48 @@ class PaymentMatcherTest {
     }
 
     @Nested
+    class LargeAmountGuard {
+
+        @Test
+        void agreeingSignalsWithAnAmountFarAboveTheDuesAreHeldForReview() {
+            MatchResult result = match(credit(2, "UPI/CR/632356889175/AAMIR SHAIKH/aamir.s@okicici/T21-1601 corpus",
+                    "632356889175", "70000.00"));
+
+            assertThat(result.decision()).isEqualTo(MatchDecision.SUGGESTED);
+            assertThat(result.flatId()).contains(AAMIR);
+            assertThat(result.confidence()).contains(Confidence.MEDIUM);
+            assertThat(result.reasons()).endsWith(
+                    "Amount ₹70,000.00 is much higher than T21-1601's dues of ₹16,368.85; check before posting");
+        }
+
+        @Test
+        void theLimitIsTheDuesPlusOneMonthsBill() {
+            assertThat(match(credit(2, "UPI/aamir.s@okicici/T21-1601", "632000000010", "27028.85")).decision())
+                    .isEqualTo(MatchDecision.AUTO_POSTED);
+            assertThat(match(credit(2, "UPI/aamir.s@okicici/T21-1601", "632000000011", "27028.86")).decision())
+                    .isEqualTo(MatchDecision.SUGGESTED);
+        }
+
+        @Test
+        void theNumberOfMonthsAllowedAboveTheDuesIsConfigurable() {
+            MatchContext strict = seedLikeContext().autoPostLimitMonths(0).build();
+
+            MatchResult result = PaymentMatcher.match(credit(2, "UPI/CR/632023556842/NENE/nene.home@okicici/T15-1605 NOV DEC",
+                    "632023556842", "10000.00"), strict);
+
+            assertThat(result.decision()).isEqualTo(MatchDecision.SUGGESTED);
+            assertThat(result.reasons()).contains(
+                    "Amount ₹10,000.00 is much higher than T15-1605's dues of ₹7,670.00; check before posting");
+        }
+
+        @Test
+        void referencePlusUniqueAmountIsNeverHeldBecauseTheAmountIsABill() {
+            assertThat(match(credit(2, "NEFT CR-T12/0408", "N305260011122299", "6370.00")).decision())
+                    .isEqualTo(MatchDecision.AUTO_POSTED);
+        }
+    }
+
+    @Nested
     class OtherCases {
 
         @Test

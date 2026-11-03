@@ -59,6 +59,7 @@ class CoreSchemaTest {
         assertThat(settings.getDueDay()).isEqualTo(10);
         assertThat(settings.getLateInterestPctPerAnnum()).isEqualByComparingTo(new BigDecimal("21.00"));
         assertThat(settings.getAiConfidenceThreshold()).isEqualByComparingTo(new BigDecimal("0.60"));
+        assertThat(settings.getAutoPostLimitMonths()).isEqualTo(1);
         assertThat(List.of(
                 settings.getFirstResponseMinutesCritical(), settings.getResolveMinutesCritical(),
                 settings.getFirstResponseMinutesHigh(), settings.getResolveMinutesHigh(),

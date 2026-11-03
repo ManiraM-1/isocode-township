@@ -54,8 +54,8 @@ class SampleStatementTest {
         byte[] start = Files.readAllBytes(SAMPLE);
 
         assertThat(new byte[] {start[0], start[1], start[2]}).containsExactly(0xEF, 0xBB, 0xBF);
-        assertThat(statement.totalRows()).isEqualTo(22);
-        assertThat(statement.errors()).extracting(RowError::rowNo).containsExactly(23);
+        assertThat(statement.totalRows()).isEqualTo(23);
+        assertThat(statement.errors()).extracting(RowError::rowNo).containsExactly(24);
         assertThat(statement.rows()).filteredOn(row -> row.kind() == RowKind.NON_CREDIT)
                 .extracting(StatementRow::rowNo).containsExactly(2, 5);
         assertThat(rows.get(2).debit()).isEqualTo(new BigDecimal("125640.00"));
@@ -103,7 +103,7 @@ class SampleStatementTest {
 
     @Test
     void rowsMeantToHaveNoAmountSignalMatchNoBillAndNoFlatTotal() {
-        for (int rowNo : List.of(7, 8, 12, 14, 18, 19, 21)) {
+        for (int rowNo : List.of(7, 8, 12, 14, 18, 19, 21, 23)) {
             BigDecimal amount = rows.get(rowNo).credit();
             assertThat(flatsWithBillRemaining(amount)).as("row %d bill", rowNo).isEmpty();
             assertThat(flatsWithOutstanding(amount)).as("row %d outstanding", rowNo).isEmpty();
@@ -125,6 +125,16 @@ class SampleStatementTest {
                 "T21-0303", "T07-1401", "T07-1407", "T15-1605", "T15-0801", "T26-2007", "T26-0807");
 
         assertThat(jdbcTemplate.queryForList("SELECT code FROM flat", String.class)).containsAll(mentioned);
+    }
+
+    @Test
+    void largeAmountRowIsAboveTheDuesPlusOneMonthsBill() {
+        BigDecimal monthlyBill = jdbcTemplate.queryForObject("""
+                SELECT b.amount FROM bill b JOIN flat f ON f.id = b.flat_id WHERE f.code = ? ORDER BY b.period DESC LIMIT 1
+                """, BigDecimal.class, "T21-1601");
+
+        assertThat(outstandingOf("T21-1601")).isEqualByComparingTo("16368.85");
+        assertThat(outstandingOf("T21-1601").add(monthlyBill)).isLessThan(rows.get(23).credit());
     }
 
     @Test

@@ -33,8 +33,9 @@ Known UPI IDs that Step 8 seeds for this file: `aamir.s@okicici` → T21-1601, `
 | 20 | Exact repeat of row 19, still no UTR | same row hash, no UTR | `POSSIBLE_DUPLICATE` of row 19 (queued, never auto-posted) |
 | 21 | Caterer refund, ₹1,23,450.00 | none | `UNMATCHED` |
 | 22 | Exact repeat of row 21 with the same reference | UTR repeated inside the file | `DUPLICATE` |
-| 23 | Amount `11,537.5O` (letter O) | — | row error, file still imports |
+| 23 | Aamir, ₹70,000.00, reference T21-1601, known UPI ID; dues ₹16,368.85, one bill ₹10,660.00 | R + V agree, but the amount is above dues plus one month's bill (A29) | `SUGGESTED` ("check before posting") |
+| 24 | Amount `11,537.5O` (letter O) | — | row error, file still imports |
 
-Totals: 5 auto-posted, 1 reconciled, 5 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 1 possible duplicate, 2 non-credit, 1 error (22 rows).
+Totals: 5 auto-posted, 1 reconciled, 6 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 1 possible duplicate, 2 non-credit, 1 error (23 rows).
 
 `SampleStatementTest` checks that every seeded value this file relies on exists and that the parser reads it as described.

@@ -56,6 +56,10 @@ final class MatchFixtures {
                 .billRemaining(T15_1605, NOVEMBER, money("7670.00"))
                 .billRemaining(T15_0801, NOVEMBER, money("6727.50"))
                 .billRemaining(T21_0303, SEPTEMBER, money("5687.50"))
+                .monthlyBill(AAMIR, money("10660.00")).monthlyBill(SWATI, money("6370.00"))
+                .monthlyBill(T26_1203, money("9945.00")).totalOutstanding(T26_1203, money("16259.34"))
+                .monthlyBill(T21_0303, money("5687.50")).totalOutstanding(T21_0303, money("17298.11"))
+                .monthlyBill(T15_1605, money("7670.00")).totalOutstanding(T15_1605, money("7670.00"))
                 .gatewayPayment("PGTEST-JD9EP9VAU8CP", 501L, T15_0903, money("3000.00"), "RCPT-202611-00101")
                 .gatewayPayment("PGTEST-SLAMTBLQNZXA", 502L, T03_0904, money("10432.50"), "RCPT-202611-00102")
                 .postedUtr("699747290912", "RCPT-202611-00103");

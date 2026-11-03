@@ -21,8 +21,14 @@ public final class MatchContext {
     private final Map<String, GatewayPayment> gatewayPayments;
     private final Map<String, SeenTransaction> seenTransactions;
     private final Map<String, DuplicateOf> seenRowHashes;
+    private final Map<Long, BigDecimal> outstandingByFlat;
+    private final Map<Long, BigDecimal> monthlyBillByFlat;
+    private final int autoPostLimitMonths;
 
     private MatchContext(Builder builder) {
+        this.outstandingByFlat = Map.copyOf(builder.outstandingByFlat);
+        this.monthlyBillByFlat = Map.copyOf(builder.monthlyBillByFlat);
+        this.autoPostLimitMonths = builder.autoPostLimitMonths;
         this.flatIdByCode = Map.copyOf(builder.flatIdByCode);
         this.codeByFlatId = Map.copyOf(builder.codeByFlatId);
         this.flatIdByUpiId = Map.copyOf(builder.flatIdByUpiId);
@@ -54,6 +60,19 @@ public final class MatchContext {
 
     List<AmountMatch> amountMatches(BigDecimal amount) {
         return amount == null ? List.of() : amountMatches.getOrDefault(Money.rounded(amount), List.of());
+    }
+
+    BigDecimal outstandingOf(Long flatId) {
+        return outstandingByFlat.getOrDefault(flatId, Money.ZERO);
+    }
+
+    Optional<BigDecimal> autoPostLimit(Long flatId) {
+        BigDecimal monthlyBill = monthlyBillByFlat.get(flatId);
+        if (monthlyBill == null) {
+            return Optional.empty();
+        }
+        return Optional.of(outstandingOf(flatId).max(Money.ZERO)
+                .add(monthlyBill.multiply(BigDecimal.valueOf(autoPostLimitMonths))));
     }
 
     Optional<GatewayPayment> gatewayPayment(String gatewayRef) {
@@ -99,8 +118,24 @@ public final class MatchContext {
         private final Map<String, GatewayPayment> gatewayPayments = new HashMap<>();
         private final Map<String, SeenTransaction> seenTransactions = new HashMap<>();
         private final Map<String, DuplicateOf> seenRowHashes = new HashMap<>();
+        private final Map<Long, BigDecimal> outstandingByFlat = new HashMap<>();
+        private final Map<Long, BigDecimal> monthlyBillByFlat = new HashMap<>();
+        private int autoPostLimitMonths = 1;
 
         private Builder() {
+        }
+
+        public Builder monthlyBill(Long flatId, BigDecimal amount) {
+            monthlyBillByFlat.put(flatId, Money.rounded(amount));
+            return this;
+        }
+
+        public Builder autoPostLimitMonths(int months) {
+            if (months < 0) {
+                throw new IllegalArgumentException("Auto-post limit months cannot be negative");
+            }
+            this.autoPostLimitMonths = months;
+            return this;
         }
 
         public Builder flat(Long flatId, String code) {
@@ -119,6 +154,7 @@ public final class MatchContext {
         }
 
         public Builder totalOutstanding(Long flatId, BigDecimal total) {
+            outstandingByFlat.put(flatId, Money.rounded(total));
             return amount(total, new AmountMatch(flatId, AmountKind.TOTAL_OUTSTANDING, null));
         }
 

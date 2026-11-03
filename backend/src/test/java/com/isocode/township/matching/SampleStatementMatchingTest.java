@@ -52,7 +52,8 @@ class SampleStatementMatchingTest {
                         Map.entry(19, MatchDecision.SUGGESTED),
                         Map.entry(20, MatchDecision.POSSIBLE_DUPLICATE),
                         Map.entry(21, MatchDecision.UNMATCHED),
-                        Map.entry(22, MatchDecision.DUPLICATE));
+                        Map.entry(22, MatchDecision.DUPLICATE),
+                        Map.entry(23, MatchDecision.SUGGESTED));
     }
 
     @Test
@@ -63,7 +64,7 @@ class SampleStatementMatchingTest {
         assertThat(counts).containsOnly(
                 entry(MatchDecision.AUTO_POSTED, 5L),
                 entry(MatchDecision.RECONCILED_GATEWAY, 1L),
-                entry(MatchDecision.SUGGESTED, 5L),
+                entry(MatchDecision.SUGGESTED, 6L),
                 entry(MatchDecision.CONFLICT, 3L),
                 entry(MatchDecision.UNMATCHED, 2L),
                 entry(MatchDecision.DUPLICATE, 2L),
@@ -75,6 +76,12 @@ class SampleStatementMatchingTest {
     void repeatsPointAtTheRowTheyRepeat() {
         assertThat(results.get(20).duplicateOf()).contains(DuplicateOf.thisImport(19));
         assertThat(results.get(22).duplicateOf()).contains(DuplicateOf.thisImport(21));
+    }
+
+    @Test
+    void theUnusuallyLargePaymentIsHeldWithAReason() {
+        assertThat(results.get(23).reasons()).contains(
+                "Amount ₹70,000.00 is much higher than T21-1601's dues of ₹16,368.85; check before posting");
     }
 
     @Test
