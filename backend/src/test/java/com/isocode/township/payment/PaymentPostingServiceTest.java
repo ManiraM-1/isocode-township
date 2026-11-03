@@ -12,6 +12,7 @@ import com.isocode.township.billing.FlatStatementService;
 import com.isocode.township.billing.LateFeeCharge;
 import com.isocode.township.billing.LateFeeChargeRepository;
 import com.isocode.township.billing.LedgerEntry;
+import com.isocode.township.billing.OutstandingLateFees;
 import com.isocode.township.billing.LedgerEntryRepository;
 import com.isocode.township.billing.LedgerEntryType;
 import com.isocode.township.billing.PaymentAllocation;
@@ -67,6 +68,9 @@ class PaymentPostingServiceTest {
 
     @Autowired
     private AuditLogRepository auditRepository;
+
+    @Autowired
+    private OutstandingLateFees outstandingLateFees;
 
     private Long neerajFlat;
     private Long swatiFlat;
@@ -187,6 +191,54 @@ class PaymentPostingServiceTest {
                 .add(chargeRepository.findByFlatIdOrderByToDateAscIdAsc(swatiFlat).stream()
                         .map(LateFeeCharge::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add));
         assertThat(ledgerRepository.balanceOf(swatiFlat)).isEqualByComparingTo(debits.subtract(new BigDecimal("3500.50")));
+    }
+
+    @Test
+    void backDatedPaymentReversesTheInterestAlreadyChargedForDaysItCovers() {
+        billingRunService.run(SEPTEMBER, null);
+        billingRunService.run(OCTOBER, null);
+        assertThat(chargeRepository.findByFlatIdOrderByToDateAscIdAsc(swatiFlat))
+                .extracting(LateFeeCharge::getAmount).containsExactly(new BigDecimal("73.30"));
+
+        pay(swatiFlat, "3000.00", LocalDate.of(2026, 9, 20));
+
+        assertThat(ledgerRepository.findByFlatIdOrderByEntryDateAscIdAsc(swatiFlat))
+                .filteredOn(entry -> entry.getType() == LedgerEntryType.REVERSAL)
+                .extracting(LedgerEntry::getCredit, LedgerEntry::getEntryDate, LedgerEntry::getDescription)
+                .containsExactly(tuple(new BigDecimal("18.99"), LocalDate.of(2026, 11, 3),
+                        "Late interest adjusted for payment of 20 Sep 2026"));
+        assertThat(statementService.summary(swatiFlat).outstanding())
+                .isEqualTo(new BigDecimal("12740.00").add(new BigDecimal("73.30"))
+                        .subtract(new BigDecimal("18.99")).subtract(new BigDecimal("3000.00")));
+        assertThat(outstandingLateFees.forFlat(swatiFlat)).extracting(OutstandingLateFees.Balance::outstanding)
+                .containsExactly(new BigDecimal("54.31"));
+    }
+
+    @Test
+    void secondBackDatedPaymentReversesOnlyTheFurtherDifference() {
+        billingRunService.run(SEPTEMBER, null);
+        billingRunService.run(OCTOBER, null);
+        pay(swatiFlat, "3000.00", LocalDate.of(2026, 9, 20));
+
+        pay(swatiFlat, "1000.00", LocalDate.of(2026, 9, 25));
+
+        assertThat(ledgerRepository.findByFlatIdOrderByEntryDateAscIdAsc(swatiFlat))
+                .filteredOn(entry -> entry.getType() == LedgerEntryType.REVERSAL)
+                .extracting(LedgerEntry::getCredit)
+                .containsExactly(new BigDecimal("18.99"), new BigDecimal("3.45"));
+        assertThat(outstandingLateFees.forFlat(swatiFlat)).extracting(OutstandingLateFees.Balance::outstanding)
+                .containsExactly(new BigDecimal("50.86"));
+    }
+
+    @Test
+    void paymentDatedAfterTheLastChargedDayReversesNothing() {
+        billingRunService.run(SEPTEMBER, null);
+        billingRunService.run(OCTOBER, null);
+
+        pay(swatiFlat, "3000.00", LocalDate.of(2026, 10, 2));
+
+        assertThat(ledgerRepository.findByFlatIdOrderByEntryDateAscIdAsc(swatiFlat))
+                .extracting(LedgerEntry::getType).doesNotContain(LedgerEntryType.REVERSAL);
     }
 
     @Test

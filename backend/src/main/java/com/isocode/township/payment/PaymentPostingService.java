@@ -1,5 +1,6 @@
 package com.isocode.township.payment;
 
+import com.isocode.township.billing.LateFeeCorrection;
 import com.isocode.township.billing.LedgerEntry;
 import com.isocode.township.billing.LedgerEntryRepository;
 import com.isocode.township.common.AuditService;
@@ -12,6 +13,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +30,14 @@ public class PaymentPostingService {
     private final AllocationWriter allocationWriter;
     private final ReceiptNumbers receiptNumbers;
     private final AuditService auditService;
+    private final LateFeeCorrection lateFeeCorrection;
     private final Clock clock;
 
     public PaymentPostingService(FlatRepository flatRepository, PaymentRepository paymentRepository,
                                  LedgerEntryRepository ledgerRepository, OpenItemsQuery openItemsQuery,
                                  AllocationWriter allocationWriter, ReceiptNumbers receiptNumbers,
-                                 AuditService auditService, Clock clock) {
+                                 AuditService auditService, LateFeeCorrection lateFeeCorrection, Clock clock) {
+        this.lateFeeCorrection = lateFeeCorrection;
         this.flatRepository = flatRepository;
         this.paymentRepository = paymentRepository;
         this.ledgerRepository = ledgerRepository;
@@ -60,6 +64,12 @@ public class PaymentPostingService {
         ledgerRepository.save(LedgerEntry.creditForPayment(command.flatId(), payment.getId(), command.paidOn(),
                 command.amount(), PaymentDescriptions.ledgerCredit(command.method(), receiptNo), now,
                 command.actorUserId()));
+        List<Long> billsPaid = plan.allocations().stream()
+                .filter(allocation -> allocation.item().type() == PaymentAllocator.ItemType.BILL)
+                .map(allocation -> allocation.item().id())
+                .toList();
+        lateFeeCorrection.reverseInterestChargedAfter(command.paidOn(), billsPaid, payment.getId(),
+                LocalDate.now(clock), now, command.actorUserId());
         auditService.record(command.actorUserId(), "PAYMENT_POSTED", "PAYMENT", payment.getId(),
                 auditDetails(command, receiptNo, plan.advance()));
 

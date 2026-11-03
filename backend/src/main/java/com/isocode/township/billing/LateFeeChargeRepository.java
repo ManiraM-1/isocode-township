@@ -15,6 +15,8 @@ public interface LateFeeChargeRepository extends Repository<LateFeeCharge, Long>
 
     List<LateFeeCharge> findByFlatIdOrderByToDateAscIdAsc(Long flatId);
 
+    List<LateFeeCharge> findByBillIdOrderByToDateAscIdAsc(Long billId);
+
     long count();
 
     @Query("select c.billId as billId, max(c.toDate) as lastChargedDay from LateFeeCharge c "

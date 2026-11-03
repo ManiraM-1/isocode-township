@@ -12,11 +12,14 @@ public class OutstandingLateFees {
 
     private final LateFeeChargeRepository chargeRepository;
     private final PaymentAllocationRepository allocationRepository;
+    private final LateFeeAdjustmentRepository adjustmentRepository;
 
     public OutstandingLateFees(LateFeeChargeRepository chargeRepository,
-                               PaymentAllocationRepository allocationRepository) {
+                               PaymentAllocationRepository allocationRepository,
+                               LateFeeAdjustmentRepository adjustmentRepository) {
         this.chargeRepository = chargeRepository;
         this.allocationRepository = allocationRepository;
+        this.adjustmentRepository = adjustmentRepository;
     }
 
     @Transactional(readOnly = true)
@@ -25,13 +28,17 @@ public class OutstandingLateFees {
         if (charges.isEmpty()) {
             return List.of();
         }
-        Map<Long, BigDecimal> paidByCharge = allocationRepository
-                .findByLateFeeChargeIdIn(charges.stream().map(LateFeeCharge::getId).toList()).stream()
+        List<Long> chargeIds = charges.stream().map(LateFeeCharge::getId).toList();
+        Map<Long, BigDecimal> paidByCharge = allocationRepository.findByLateFeeChargeIdIn(chargeIds).stream()
                 .collect(Collectors.groupingBy(PaymentAllocation::getLateFeeChargeId,
                         Collectors.reducing(BigDecimal.ZERO, PaymentAllocation::getAmount, BigDecimal::add)));
+        Map<Long, BigDecimal> adjustedByCharge = adjustmentRepository.findByLateFeeChargeIdIn(chargeIds).stream()
+                .collect(Collectors.groupingBy(LateFeeAdjustment::getLateFeeChargeId,
+                        Collectors.reducing(BigDecimal.ZERO, LateFeeAdjustment::getAmount, BigDecimal::add)));
         return charges.stream()
-                .map(charge -> new Balance(charge,
-                        charge.getAmount().subtract(paidByCharge.getOrDefault(charge.getId(), BigDecimal.ZERO))))
+                .map(charge -> new Balance(charge, charge.getAmount()
+                        .subtract(paidByCharge.getOrDefault(charge.getId(), BigDecimal.ZERO))
+                        .subtract(adjustedByCharge.getOrDefault(charge.getId(), BigDecimal.ZERO))))
                 .filter(balance -> balance.outstanding().signum() > 0)
                 .toList();
     }
