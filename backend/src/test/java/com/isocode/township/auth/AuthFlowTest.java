@@ -110,7 +110,7 @@ class AuthFlowTest {
         requestOtp(NEERAJ);
         entityManager.flush();
         entityManager.clear();
-        jdbcTemplate.update("UPDATE otp_challenge SET expires_at = now() - interval '1 minute' WHERE phone = ?", NEERAJ);
+        jdbcTemplate.update("UPDATE otp_challenge SET expires_at = created_at WHERE phone = ?", NEERAJ);
 
         verify(NEERAJ, smsCodeFor(NEERAJ))
                 .andExpect(status().isUnauthorized())

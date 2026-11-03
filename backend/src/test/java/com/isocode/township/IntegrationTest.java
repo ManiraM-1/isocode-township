@@ -15,6 +15,6 @@ import org.springframework.context.annotation.Import;
         "app.jwt.secret=${random.uuid}${random.uuid}"
 })
 @AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class, TestSessions.class})
 public @interface IntegrationTest {
 }
