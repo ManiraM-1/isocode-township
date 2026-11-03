@@ -7,6 +7,7 @@ import com.isocode.township.common.TooManyRequestsException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class OtpService {
     private final OtpProperties otpProperties;
     private final AppProperties appProperties;
     private final Clock clock;
+    private final String unknownPhoneHash;
 
     public OtpService(OtpChallengeRepository challengeRepository, AppUserRepository userRepository,
                       OutboxService outboxService, OtpCodeGenerator codeGenerator, PasswordEncoder passwordEncoder,
@@ -37,6 +39,7 @@ public class OtpService {
         this.otpProperties = otpProperties;
         this.appProperties = appProperties;
         this.clock = clock;
+        this.unknownPhoneHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     @Transactional
@@ -61,17 +64,19 @@ public class OtpService {
     @Transactional(noRollbackFor = OtpRejectedException.class)
     public AppUser verify(String phone, String code) {
         Instant now = clock.instant();
-        OtpChallenge challenge = challengeRepository.findFirstByPhoneOrderByIdDesc(phone)
-                .orElseThrow(() -> new OtpRejectedException(OtpRejection.EXPIRED, 0));
+        Optional<OtpChallenge> latest = challengeRepository.findFirstByPhoneOrderByIdDesc(phone);
+        Optional<AppUser> user = activeUser(phone);
+        String expectedHash = user.isPresent() && latest.isPresent() ? latest.get().getCodeHash() : unknownPhoneHash;
+        boolean codeMatches = passwordEncoder.matches(code, expectedHash);
+
+        OtpChallenge challenge = latest.orElseThrow(() -> new OtpRejectedException(OtpRejection.EXPIRED, 0));
         if (challenge.isConsumed() || challenge.isExpiredAt(now)) {
             throw new OtpRejectedException(OtpRejection.EXPIRED, 0);
         }
         if (challenge.getAttempts() >= otpProperties.maxAttempts()) {
             throw new OtpRejectedException(OtpRejection.LOCKED, 0);
         }
-
-        Optional<AppUser> user = activeUser(phone);
-        if (user.isEmpty() || !passwordEncoder.matches(code, challenge.getCodeHash())) {
+        if (user.isEmpty() || !codeMatches) {
             challenge.recordFailedAttempt();
             int attemptsRemaining = otpProperties.maxAttempts() - challenge.getAttempts();
             throw attemptsRemaining > 0

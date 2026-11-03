@@ -6,11 +6,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.isocode.township.auth.dto.OtpRequestResponse;
 import com.isocode.township.common.AppProperties;
 import com.isocode.township.common.MessageChannel;
 import com.isocode.township.common.OutboxService;
@@ -19,6 +25,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -181,6 +189,55 @@ class OtpServiceTest {
         assertThatThrownBy(() -> service.verify(PHONE, CODE))
                 .isInstanceOfSatisfying(OtpRejectedException.class,
                         rejected -> assertThat(rejected.reason()).isEqualTo(OtpRejection.EXPIRED));
+    }
+
+    @Test
+    void inDemoModeKnownAndUnknownPhonesGetTheSameResponseShape() throws Exception {
+        String unknownPhone = "+919999999999";
+        when(userRepository.findByPhone(PHONE)).thenReturn(Optional.of(neeraj));
+        when(userRepository.findByPhone(unknownPhone)).thenReturn(Optional.empty());
+        OtpService service = service(true);
+
+        OtpRequestResult known = service.request(PHONE);
+        OtpRequestResult unknown = service.request(unknownPhone);
+
+        assertThat(unknown).isEqualTo(known);
+        ObjectMapper json = new ObjectMapper();
+        JsonNode knownJson = json.valueToTree(toResponse(known));
+        JsonNode unknownJson = json.valueToTree(toResponse(unknown));
+        assertThat(fieldNames(unknownJson)).containsExactly("expiresInSeconds", "demoOtp");
+        assertThat(fieldNames(unknownJson)).isEqualTo(fieldNames(knownJson));
+        assertThat(unknownJson.get("demoOtp").asText()).matches("\\d{6}");
+    }
+
+    @Test
+    void everyVerifyRunsExactlyOneHashCheckWhetherOrNotThePhoneIsKnown() {
+        PasswordEncoder countingEncoder = spy(new BCryptPasswordEncoder(4));
+        OtpChallenge knownChallenge = new OtpChallenge(PHONE, countingEncoder.encode(CODE), NOW, NOW.plusSeconds(300));
+        OtpChallenge unknownChallenge = new OtpChallenge("+919999999999", countingEncoder.encode(CODE), NOW, NOW.plusSeconds(300));
+        when(challengeRepository.findFirstByPhoneOrderByIdDesc(PHONE)).thenReturn(Optional.of(knownChallenge));
+        when(challengeRepository.findFirstByPhoneOrderByIdDesc("+919999999999")).thenReturn(Optional.of(unknownChallenge));
+        when(challengeRepository.findFirstByPhoneOrderByIdDesc("+919888888888")).thenReturn(Optional.empty());
+        when(userRepository.findByPhone(anyString())).thenAnswer(invocation ->
+                PHONE.equals(invocation.getArgument(0)) ? Optional.of(neeraj) : Optional.empty());
+        OtpService service = new OtpService(challengeRepository, userRepository, outboxService, codeGenerator,
+                countingEncoder, OTP_PROPERTIES, new AppProperties(ZoneId.of("Asia/Kolkata"), false), clock);
+
+        for (String phone : new String[] {PHONE, "+919999999999", "+919888888888"}) {
+            clearInvocations(countingEncoder);
+            assertThatThrownBy(() -> service.verify(phone, "000000")).isInstanceOf(OtpRejectedException.class);
+            verify(countingEncoder, times(1)).matches(eq("000000"), anyString());
+        }
+    }
+
+    private static OtpRequestResponse toResponse(OtpRequestResult result) {
+        return new OtpRequestResponse(result.expiresIn().toSeconds(), result.demoOtp().orElse(null));
+    }
+
+    private static List<String> fieldNames(JsonNode node) {
+        List<String> names = new ArrayList<>();
+        node.fieldNames().forEachRemaining(names::add);
+        return names;
     }
 
     private OtpChallenge openChallenge() {
