@@ -16,6 +16,8 @@ public interface PaymentRepository extends Repository<Payment, Long> {
 
     Optional<Payment> findByGatewayRef(String gatewayRef);
 
+    Optional<Payment> findByUtr(String utr);
+
     List<Payment> findByFlatIdOrderByPaidOnAscIdAsc(Long flatId);
 
     long count();
