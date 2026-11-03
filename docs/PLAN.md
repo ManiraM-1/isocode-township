@@ -102,48 +102,52 @@ Tests: every alias set parses; Indian grouping; each date format; malformed row 
 Commit: `feat(matching): parse bank statement CSVs into normalised credit rows`
 
 ### [ ] Step 7: Matching engine (the hard part)
-Pure class `PaymentMatcher.match(row, context)` → `MatchResult(decision, flatId, candidates, confidence, reasons[])`. `context` is built once per import (not per row): flat codes → flat id, known UPI IDs → flat id, outstanding per flat, open payment intents by gateway ref, seen row hashes and UTRs.
+Pure class `PaymentMatcher.match(row, context)` → `MatchResult(decision, flatId, candidates, confidence, reasons[], duplicateOfRowNo)`. `context` is built once per import (not per row): flat codes → flat id, known UPI IDs → flat id, outstanding per flat and remaining principal per unpaid bill, payments by gateway ref, UTRs and gateway refs already posted or reconciled, and row hashes of earlier bank rows. Rows of the same file are added to the seen sets as they are matched, so a repeat inside one file is caught too.
 
 Signals:
 - **R (reference):** flat codes found in description/reference after normalisation. Accept `T07-1203`, `T7-1203`, `T07/1203`, `T07 1203`, `T071203`, `TOWER 7 FLAT 1203`. Must exist. Two different flats found → R is ambiguous.
 - **V (UPI ID):** extracted VPA that is known for a flat.
-- **A (amount):** flats whose total outstanding, or the remaining amount of one bill, equals the row amount exactly. Unique or multiple.
-- **G (gateway):** gateway ref matching an existing payment intent.
+- **A (amount):** flats whose total outstanding, or the remaining principal of one bill, equals the row amount exactly. Unique (one flat) or multiple. **A is a supporting signal only (A9):** it can confirm R or V, or suggest a flat on its own, but it never causes a conflict.
+- **G (gateway):** gateway ref matching an existing gateway payment.
 
 Decision table, applied in this order:
 | # | Condition | Decision | Posted? |
 |---|---|---|---|
-| 1 | Row hash or UTR already seen | `DUPLICATE` | No |
+| 1 | UTR (or gateway ref) already posted, reconciled or earlier in this import | `DUPLICATE` | No, and not queued |
 | 2 | Not a credit | `NON_CREDIT` | No |
-| 3 | G matches and amount equal | `RECONCILED_GATEWAY` (link to existing payment) | No (already posted) |
-| 4 | G matches, amount differs | `CONFLICT` | No |
-| 5 | Two or more signals name different flats, or R ambiguous | `CONFLICT` with candidates | No |
-| 6 | Two or more signals name the same single flat | `AUTO_POSTED`, confidence HIGH | **Yes** |
-| 7 | Exactly one signal names a flat | `SUGGESTED`, confidence MEDIUM | No, one-click confirm |
-| 8 | Amount matches several flats, nothing else | `UNMATCHED` with candidates, confidence LOW | No |
-| 9 | Nothing matches | `UNMATCHED` | No |
-Every result carries human-readable reasons, e.g. "Reference T21-1601 found", "UPI aamir.s@okicici is known for T21-1601", "Amount ₹5,660.00 equals T21-1601 outstanding".
+| 3 | Same row hash as an earlier bank row and no UTR | `POSSIBLE_DUPLICATE` (links the earlier row) | No, goes to the accounts queue (A28) |
+| 4 | G matches and amount equal | `RECONCILED_GATEWAY` (link to existing payment) | No (already posted) |
+| 5 | G matches, amount differs | `CONFLICT` | No |
+| 6 | R is ambiguous, or R and V name different flats | `CONFLICT` with candidates | No |
+| 7 | R and V name the same flat | `AUTO_POSTED`, confidence HIGH | **Yes** |
+| 8 | Only one of R or V names a flat, and A is unique for that same flat | `AUTO_POSTED`, confidence HIGH | **Yes** |
+| 9 | Only one of R or V names a flat (A absent, elsewhere, or on several flats) | `SUGGESTED`, confidence MEDIUM | No, one-click confirm |
+| 10 | No R or V; A unique | `SUGGESTED`, confidence MEDIUM | No, one-click confirm |
+| 11 | No R or V; A on several flats | `UNMATCHED` with candidates, confidence LOW | No |
+| 12 | Nothing matches | `UNMATCHED` | No |
 
-Tests: one test per table row, plus: reference with lowercase and spaces; VPA known for flat A but reference says flat B → CONFLICT; partial payment with reference + known VPA → AUTO_POSTED; amount equal for two flats → UNMATCHED with both candidates; overpayment with two agreeing signals → AUTO_POSTED; and a performance test: 3,000 generated rows against 2,400 flats match in under 3 seconds.
+When A points to a different flat than R or V, it is ignored for the decision and a reason says so, e.g. "Amount ₹4,070.00 also equals T12-1108's bill; ignored because reference and UPI ID agree". An amount that matches several flats, even if one of them is the R/V flat, does not count as agreement. Every result carries human-readable reasons, e.g. "Reference T21-1601 found", "UPI aamir.s@okicici is known for T21-1601", "Amount ₹5,660.00 equals the remaining amount of T21-1601's October 2026 bill".
+
+Tests: one test per table row, plus: reference with lowercase and spaces; every accepted reference format; VPA known for flat A but reference says flat B → CONFLICT; R + V agree while A points elsewhere → AUTO_POSTED with the "ignored" reason; R alone with A elsewhere → SUGGESTED with the "ignored" reason; V alone → SUGGESTED; R + unique A on the same flat → AUTO_POSTED; V + unique A on the same flat → AUTO_POSTED; R + A on several flats including the R flat → SUGGESTED; partial payment with reference + known VPA → AUTO_POSTED; amount equal for two flats → UNMATCHED with both candidates; overpayment with two agreeing signals → AUTO_POSTED; UTR repeated inside one file → DUPLICATE; same hash without UTR → POSSIBLE_DUPLICATE; and a performance test: 3,000 generated rows against 2,400 flats match in under 3 seconds.
 Commit: `feat(matching): decide bank row matches from reference, UPI ID and amount`
 
 ### [ ] Step 8: Bank import and the accounts queue
 Flyway `V4__bank_matching.sql`:
-- `bank_import(id, file_name, file_sha256, uploaded_by, uploaded_at, total_rows, auto_posted, reconciled, suggested, conflicts, unmatched, duplicates, errors)`
-- `bank_row(id, import_id, row_no, txn_date, description, reference, utr, vpa, gateway_ref, amount, row_hash UNIQUE, decision, suggested_flat_id, candidates JSONB, confidence, reasons JSONB, payment_id, resolved_by, resolved_at, resolution_note, parse_error)`
+- `bank_import(id, file_name, file_sha256, uploaded_by, uploaded_at, total_rows, auto_posted, reconciled, suggested, conflicts, unmatched, duplicates, possible_duplicates, non_credit, errors)`
+- `bank_row(id, import_id, row_no, txn_date, description, reference, utr, vpa, gateway_ref, amount, row_hash (non-unique index), duplicate_of_row_id NULL FK bank_row, decision, suggested_flat_id, candidates JSONB, confidence, reasons JSONB, payment_id, resolved_by, resolved_at, resolution_note, parse_error)`. A row hash can repeat (two genuine identical transfers on one day); `duplicate_of_row_id` links a `POSSIBLE_DUPLICATE` to the row it repeats.
 - `known_vpa(id, vpa UNIQUE, flat_id, learned_from_row_id, created_at)`. Seed known VPAs for about a third of flats, including `aamir.s@okicici` → T21-1601.
 
 `BankImportService.importFile(file, actor)` (HELPDESK only; multipart; reject > 5 MB or non-CSV): parse → build context once → match each row → persist → auto-post via `PaymentPostingService` (source BANK_STATEMENT, method UPI/BANK_TRANSFER) → audit. The whole import is one transaction; a crash posts nothing.
 
-Accounts queue (rows in SUGGESTED, CONFLICT, UNMATCHED):
+Accounts queue (rows in SUGGESTED, CONFLICT, UNMATCHED, POSSIBLE_DUPLICATE; a possible duplicate shows the row it repeats, and "Not maintenance" with reason "duplicate" closes it without posting):
 - `GET /api/desk/bank-imports`, `GET /api/desk/bank-imports/{id}` (summary + rows), `GET /api/desk/accounts-queue` (oldest first, with reasons and candidates).
 - `POST /api/desk/bank-rows/{id}/confirm` (accept suggestion), `POST /api/desk/bank-rows/{id}/assign {flatId, note}`, `POST /api/desk/bank-rows/{id}/ignore {reason}` (not a maintenance payment). Each posts at most once (409 if already resolved), records who and when, audits, and on confirm/assign learns the VPA (A10) unless it belongs to another flat (then warn, do not overwrite).
 - `GET /api/desk/flats/search?q=` for the assign picker (flat code or resident name).
 **Back-dated payments and late interest:** a bank row can be dated before the last day already charged with late interest (statement imported after a billing run). When such a payment is posted (auto, confirm or assign), recompute each affected bill's posted late-fee periods with the payment at its real date (A24) and post the difference as a REVERSAL ledger credit linked to the late-fee charge ("Late interest adjusted for payment of <date>"). The charge's payable amount is reduced by its adjustments, so it is never collected twice. Test: a payment dated 20 Sep posted after the October run reduces the interest charged for 11–30 Sep to the correct amount, and outstanding equals bills + fees − adjustments − payments.
 
-**Demo statement for reviewers (demo mode only):** `GET /api/desk/demo/bank-statement.csv` (HELPDESK) generates a statement from current data with one row per matching case (duplicate UTR, debit, gateway reconcile, gateway amount conflict, signal conflict, ambiguous reference, two-signal auto-post, one-signal suggestion, amount on several flats, nothing matches, plus a malformed row), so a reviewer can download, upload and see every decision type on any date. Amount-only rows use one bill's remaining principal, never a total including late fees. The controller exists only when `APP_DEMO_MODE=true`; a test checks it is a 404 otherwise.
+**Demo statement for reviewers (demo mode only):** `GET /api/desk/demo/bank-statement.csv` (HELPDESK) generates a statement from current data with one row per matching case (duplicate UTR, possible duplicate without UTR, debit, gateway reconcile, gateway amount conflict, signal conflict, ambiguous reference, two-signal auto-post, one-signal suggestion, amount on several flats, nothing matches, plus a malformed row), so a reviewer can download, upload and see every decision type on any date. Amount-only rows use one bill's remaining principal, never a total including late fees. The controller exists only when `APP_DEMO_MODE=true`; a test checks it is a 404 otherwise.
 
-Tests (integration): importing the demo CSV gives the expected counts per decision; importing it again posts nothing new and reports duplicates; no row in SUGGESTED/CONFLICT/UNMATCHED ever creates a payment; confirm posts exactly once and learns the VPA; assign to the wrong-but-chosen flat works and is audited; residents get 403 on all of these; the generated demo statement produces every decision type.
+Tests (integration): importing the demo CSV gives the expected counts per decision; importing it again posts nothing new, reports rows with a UTR as duplicates and queues rows without a UTR as possible duplicates; no row in SUGGESTED/CONFLICT/UNMATCHED/POSSIBLE_DUPLICATE ever creates a payment; confirm posts exactly once and learns the VPA; assign to the wrong-but-chosen flat works and is audited; residents get 403 on all of these; the generated demo statement produces every decision type.
 Commit: `feat(matching): import bank statements, auto-post confident matches and queue the rest`
 
 ### [ ] Step 9: Complaints
