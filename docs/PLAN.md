@@ -89,7 +89,7 @@ Seed: payment history for the 3 months so roughly 70% of bills were paid by the 
 Tests: Aamir pays 5,000 → 5,660.00 outstanding; overpayment becomes advance and is consumed by the next bill; double `simulate SUCCESS` posts once; same idempotency key returns the same intent; resident cannot pay or read receipts for another flat.
 Commit: `feat(payments): add test-mode payments with oldest-first allocation and receipts`
 
-### [ ] Step 6: Bank statement CSV parser
+### [x] Step 6: Bank statement CSV parser
 Pure class `BankStatementParser.parse(InputStream)` → `ParsedStatement(rows, errors)`:
 - Format per A8. Header aliases: date ← `Txn Date|Transaction Date|Date|Value Date`; description ← `Description|Narration|Particulars|Remarks`; reference ← `Ref No|Reference|Chq/Ref No|UTR|Cheque No`; credit ← `Credit|Deposit|Cr Amount|Credit Amount`; debit ← `Debit|Withdrawal|Dr Amount`. Case- and whitespace-insensitive, BOM tolerated.
 - Amounts: strip `₹`, spaces and commas; must parse to scale-2 `BigDecimal`. Dates: `dd/MM/yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd`.

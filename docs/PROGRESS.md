@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 6
+**Next step:** Step 7
 
 ---
 
@@ -59,3 +59,11 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: A23, A24, A25, A26. Decided with Maniram: Swati paid nothing (A6 rules out "paid all but one"); Aamir's current-month bill is issued but not due, with the overdue amount shown separately.
 - Open items: (1) A payment dated before the last day already charged with interest (possible with bank statements imported after a billing run, Step 8) is allocated correctly, but the interest already posted is not reduced; Step 8 must post a reversing late-fee adjustment for that case. (2) `simulate` is called by the resident's browser in test mode; a real gateway would confirm by a signed server-to-server callback. (3) Seeded history is relative to the seed date; the demo reset in Step 17 reseeds it.
 - Next step: Step 6
+
+## 2026-11-03: Step 6, Bank statement CSV parser
+- Built: pure `BankStatementParser.parse(InputStream)` → `ParsedStatement(rows, errors)` in `matching`. Header aliases per the plan, matched ignoring case and spaces (`StatementColumn`); missing date, description or credit column fails the whole file with the accepted names in the message (A27). Amounts strip ₹, Rs., INR, spaces and commas, so Indian grouping works, and must have at most two decimals (`StatementAmounts`). Dates `dd/MM/yyyy`, `dd-MM-yyyy`, `yyyy-MM-dd`, strict (31/11 rejected). UTF-8 BOM tolerated. `PaymentReferences` extracts the UTR, the UPI ID (lowercased) and the `PGTEST-` gateway reference. `rowHash` = SHA-256 of date | description (lowercased, single spaces) | reference | credit. Bad rows become `RowError`s numbered by spreadsheet row and never stop the file; debit-only and zero rows are `NON_CREDIT`; a row with both credit and debit is an error; more than 20,000 rows or broken CSV fails the file. `samples/bank-statement-demo.csv` (19 rows, 1–3 Nov 2026) is built for the seed on the fixed test clock: one row per Step 7 decision, a deterministic seeded gateway reference that reconciles and one whose amount differs, an already-posted seeded UTR, an exact repeat row, two debits, Indian-grouped amounts, a BOM and a malformed amount. Amount-only rows use one bill's remaining principal (₹4,070.00 for T12-1108; ₹6,207.50 shared by T21-0104 and T21-1402). `samples/README.md` lists the expected decision for every row and the four UPI IDs Step 8 must seed.
+- Tests: 201 passing (28 parser: every alias set, case and spacing, Indian grouping, each date format, malformed and invalid rows reported with row numbers while others parse, BOM, missing header, row limit, extraction, row hash; 9 sample-statement tests that pin the file to the seed).
+- New assumptions: A27.
+- Plan updated before this step: Step 8 now includes the late-fee reversal for back-dated payments and the demo-mode generated statement; Step 15 includes the "Download sample statement" button.
+- Open items: the static sample is valid only on the fixed test date; reviewers on the live app will use the generated statement from Step 8.
+- Next step: Step 7
