@@ -52,7 +52,7 @@ Commit: `feat(core): add schema for towers, flats, users and settings with demo 
 Tests: correct OTP logs in; wrong OTP increments attempts; sixth attempt rejected; expired rejected; reused rejected; rate limit 429; unknown phone same response; resident gets 403 on another flat; resident gets 403 on `/api/desk/**`.
 Commit: `feat(auth): add phone OTP sign-in with JWT cookie and role-based access`
 
-### [ ] Step 4: Maintenance billing and late fees
+### [x] Step 4: Maintenance billing and late fees
 Flyway `V2__billing.sql`:
 - `bill(id, flat_id, period DATE (1st of month), area_sqft, rate, amount NUMERIC(12,2), due_date, amount_paid NUMERIC(12,2) DEFAULT 0, created_at, UNIQUE(flat_id, period))`
 - `late_fee_charge(id, flat_id, bill_id, from_date, to_date, amount, created_at)`

@@ -2,7 +2,7 @@
 
 Newest entry at the bottom. Claude Code appends one entry after every step. If a session drops, the next session reads this file first and continues from "Next step".
 
-**Next step:** Step 4
+**Next step:** Step 5
 
 ---
 
@@ -42,3 +42,13 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: none.
 - Open items: the OTP rate limit is per phone, not per IP, so one client can still spread requests across many phone numbers (an IP or global limit belongs in front of the app, for example at the proxy). Logout clears the cookie but a copied JWT stays valid until it expires (stateless; acceptable for 12 h, a deny-list is possible later). Old `otp_challenge` rows are not purged yet. Demo `.env.example` JWT secret is a placeholder; the deployed app must set its own (Step 18).
 - Next step: Step 4
+
+## 2026-11-03: Step 3 follow-up, enumeration fixes
+- `verify` now always runs exactly one BCrypt check (against a startup-random dummy hash when the phone is unknown or has no live challenge), so timing no longer reveals whether a phone is registered. Demo mode already returned `demoOtp` for unknown phones; a test now pins identical response shapes. 65 tests.
+
+## 2026-11-03: Step 4, Maintenance billing and late fees
+- Built: Flyway `V2__billing.sql` with bill (one per flat per month, area and rate snapshotted, `0 ≤ amount_paid ≤ amount`), late_fee_charge (once per bill per end date) and ledger_entry (exactly one of debit/credit, one entry per source). A Postgres trigger rejects UPDATE, DELETE and TRUNCATE on the ledger; `LedgerEntryRepository` and `LateFeeChargeRepository` extend the bare `Repository` and expose only save and reads; both entities are `@Immutable`. Pure `BillCalculator` and `LateFeeCalculator` (principal × pct/100 × days/365, HALF_UP to paise, zero on or before the due date). `BillingRunService.run(month)` locks the settings row so two runs cannot interleave, bills every flat that has no bill for the month (due on `due_day`), debits the ledger, then `LateFeePostingService` posts interest on unpaid principal up to the end of the previous month (A22). `FlatStatementService`: outstanding and advance from the ledger balance, live accrued late fee, oldest unpaid due date, days overdue, bills with PAID/DUE/OVERDUE, ledger with running balance. APIs: `GET /api/flats/{id}/summary|bills|ledger` (member or HELPDESK via `FlatAccessGuard`), `POST /api/desk/billing-runs` (HELPDESK). Money is serialised as plain strings (`"7475.00"`). Demo seed: billing runs for Sep, Oct, Nov 2026, run in the same transaction as the core seed.
+- Tests: 114 passing. Plan cases: 7,475.00 / 6,370.00 / 10,660.00; 172.25 for 47 days; zero on/before due; run idempotent; ledger repository has no update/delete and the database refuses them. Plus exact seeded interest (Swati: 73.30, 113.61, 76.96; live 21.98; outstanding 19,373.87; 54 days overdue), and the HTTP-level 403 when a resident opens another flat's summary, bills or ledger. Integration tests now run on a fixed clock (3 Nov 2026, 10:00 IST). Manual smoke test on real Tomcat in demo mode returned the same summary.
+- New assumptions: A22.
+- Open items: (1) Step 5 must make late interest follow the principal day by day when a bill is part-paid mid-period (A4 says "per day"); today the run uses the principal outstanding at run time, which is exact while no payments exist. (2) Until Step 5 seeds payments, every demo flat has three unpaid bills. (3) Requests that arrive while the startup seed is still running see an empty database for a second or two.
+- Next step: Step 5
