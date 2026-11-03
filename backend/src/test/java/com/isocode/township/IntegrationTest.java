@@ -10,7 +10,10 @@ import org.springframework.context.annotation.Import;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(properties = "app.demo-mode=false")
+@SpringBootTest(properties = {
+        "app.demo-mode=false",
+        "app.jwt.secret=${random.uuid}${random.uuid}"
+})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public @interface IntegrationTest {

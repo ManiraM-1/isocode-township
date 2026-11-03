@@ -47,6 +47,7 @@ class TownshipApplicationTests {
     @Test
     void otherEndpointsRequireSignIn() throws Exception {
         mockMvc.perform(get("/api/anything"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Sign-in required"));
     }
 }
