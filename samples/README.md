@@ -1,4 +1,4 @@
-# Sample bank statements
+# Sample files
 
 ## `bank-statement-demo.csv`
 
@@ -39,3 +39,17 @@ Known UPI IDs that Step 8 seeds for this file: `aamir.s@okicici` → T21-1601, `
 Totals: 5 auto-posted, 1 reconciled, 6 suggested, 3 conflicts, 2 unmatched, 2 duplicates, 1 possible duplicate, 2 non-credit, 1 error (23 rows).
 
 `SampleStatementTest` checks that every seeded value this file relies on exists and that the parser reads it as described.
+
+## `complaints-eval.csv`
+
+Thirty labelled complaint texts for measuring the classifier (Step 10): 16 English, 6 Hinglish, 4 Hindi, 4 Marathi. Columns: `language, category, urgency, text`. All texts are invented. The seven Critical rows are emergencies the safety rule must catch whatever the AI says.
+
+- `KeywordBaselineEvalTest` runs in every build with the AI switched off and checks that the keyword fallback plus the safety rule miss no Critical row and raise no false alarm.
+- `ClassifierEvalTest` calls Gemini and is excluded from normal builds. Run it with a key:
+
+```
+cd backend
+GEMINI_API_KEY=... ./mvnw test -Dtest=ClassifierEvalTest -DexcludedGroups= -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+It prints category and urgency accuracy, accuracy per language and every miss.

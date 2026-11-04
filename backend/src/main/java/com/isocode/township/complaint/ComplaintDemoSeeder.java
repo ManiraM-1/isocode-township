@@ -41,6 +41,9 @@ public class ComplaintDemoSeeder {
             ComplaintCategory.PEST_CONTROL, "+919000000105",
             ComplaintCategory.SECURITY, "+919000000106"));
     private static final String GENERAL_DESK_PHONE = "+919000000101";
+    static final String FALLBACK_EXAMPLE = "Pani nahi aa raha hai since morning, tank khali lagta hai.";
+    static final String FALLBACK_REASON =
+            "AI unavailable: the AI did not answer within the time limit. Keyword rules matched tank, pani.";
 
     private final ComplaintRepository complaintRepository;
     private final ComplaintEventRepository eventRepository;
@@ -48,18 +51,20 @@ public class ComplaintDemoSeeder {
     private final FlatMemberRepository memberRepository;
     private final AppUserRepository userRepository;
     private final SocietySettingsRepository settingsRepository;
+    private final SafetyEscalator safetyEscalator;
     private final Clock clock;
 
     public ComplaintDemoSeeder(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                                FlatRepository flatRepository, FlatMemberRepository memberRepository,
                                AppUserRepository userRepository, SocietySettingsRepository settingsRepository,
-                               Clock clock) {
+                               SafetyEscalator safetyEscalator, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.flatRepository = flatRepository;
         this.memberRepository = memberRepository;
         this.userRepository = userRepository;
         this.settingsRepository = settingsRepository;
+        this.safetyEscalator = safetyEscalator;
         this.clock = clock;
     }
 
@@ -76,6 +81,45 @@ public class ComplaintDemoSeeder {
                     : pooledFlat(pool, spec);
             write(spec, flat, targets);
         }
+        seedAiExamples(pool, targets);
+    }
+
+    private void seedAiExamples(List<Flat> pool, SlaTargets targets) {
+        writeAssigned(pool.get(1 % pool.size()),
+                "Strong gas smell near the stairs on the third floor, please check quickly.",
+                new Complaint.Classification(ComplaintCategory.OTHER, Urgency.CRITICAL, ComplaintCategory.OTHER,
+                        Urgency.HIGH, new BigDecimal("0.88"), "Gas smell near third floor stairs",
+                        "Possible gas leak in a common area.", ClassifiedBy.AI, false, List.of("gas")),
+                minutes(40), targets);
+
+        writeAssigned(pool.get(4 % pool.size()),
+                "Something is wrong near the basement parking ramp, please send someone to look.",
+                new Complaint.Classification(ComplaintCategory.PARKING, Urgency.LOW, ComplaintCategory.PARKING,
+                        Urgency.LOW, new BigDecimal("0.42"), "Unclear issue near parking ramp",
+                        "The text does not say what is wrong.", ClassifiedBy.AI, true, List.of()),
+                hours(3), targets);
+
+        writeAssigned(pool.get(7 % pool.size()), FALLBACK_EXAMPLE,
+                new Complaint.Classification(ComplaintCategory.PLUMBING, Urgency.MEDIUM, ComplaintCategory.PLUMBING,
+                        Urgency.MEDIUM, new BigDecimal("0.50"), null, FALLBACK_REASON, ClassifiedBy.RULES_FALLBACK, true,
+                        List.of()),
+                hours(2), targets);
+    }
+
+    private void writeAssigned(Flat flat, String description, Complaint.Classification classification,
+                               Duration ago, SlaTargets targets) {
+        Instant created = clock.instant().minus(ago);
+        AppUser resident = signInResident(flat).orElseThrow();
+        Long staffId = staffFor(classification.category());
+        Complaint complaint = complaintRepository.save(new Complaint(refNo(created), flat.getId(), resident.getId(),
+                description, classification, created, targets.firstResponseDue(created, classification.urgency()),
+                targets.resolveDue(created, classification.urgency())));
+        event(complaint, ComplaintEventType.CREATED, resident.getId(), null, "OPEN", null, created);
+        if (!classification.safetyTerms().isEmpty()) {
+            safetyEscalator.escalate(complaint, created);
+        }
+        complaint.assignTo(staffId);
+        event(complaint, ComplaintEventType.AUTO_ASSIGNED, null, null, staffId.toString(), null, created);
     }
 
     private static Flat pooledFlat(List<Flat> pool, Spec spec) {

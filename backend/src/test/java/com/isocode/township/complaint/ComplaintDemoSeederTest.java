@@ -4,11 +4,15 @@ import static com.isocode.township.FixedClockConfiguration.NOW;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.isocode.township.IntegrationTest;
+import com.isocode.township.ai.KeywordFallbackClassifier;
+import com.isocode.township.ai.SafetyProperties;
+import com.isocode.township.ai.SafetyRule;
 import com.isocode.township.common.DemoDataSeeder;
 import com.isocode.township.flat.FlatRepository;
 import java.sql.Timestamp;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +37,12 @@ class ComplaintDemoSeederTest {
     private ComplaintEventRepository eventRepository;
 
     @Autowired
+    private EscalationRepository escalationRepository;
+
+    @Autowired
+    private SafetyProperties safetyProperties;
+
+    @Autowired
     private FlatRepository flatRepository;
 
     @Autowired
@@ -45,10 +55,10 @@ class ComplaintDemoSeederTest {
     }
 
     @Test
-    void aboutThirtyComplaintsCoverEveryStatusAfterAssignmentAndMostCategories() {
+    void aboutThirtyComplaintsPlusThreeAiExamplesCoverEveryStatusAndMostCategories() {
         List<Complaint> complaints = complaintRepository.findAll();
 
-        assertThat(complaints).hasSize(30);
+        assertThat(complaints).hasSize(33);
         assertThat(complaints).extracting(Complaint::getStatus)
                 .containsAll(EnumSet.complementOf(EnumSet.of(ComplaintStatus.OPEN)))
                 .doesNotContain(ComplaintStatus.OPEN);
@@ -66,6 +76,37 @@ class ComplaintDemoSeederTest {
             assertThat(complaint.getDescription()).containsIgnoringCase("leaking");
             assertThat(complaint.getFirstResponseAt()).isNotNull();
         });
+    }
+
+    @Test
+    void theGasSmellIsCriticalAndAwaitsTheDutyManager() {
+        Complaint gas = only(c -> c.isSafetyEscalated());
+
+        assertThat(gas.getUrgency()).isEqualTo(Urgency.CRITICAL);
+        assertThat(gas.getAiUrgency()).isEqualTo(Urgency.HIGH);
+        assertThat(gas.getSafetyTerms()).containsExactly("gas");
+        assertThat(new SafetyRule(safetyProperties.terms()).check(gas.getDescription())).containsExactly("gas");
+        assertThat(gas.getFirstResponseAt()).isNull();
+        assertThat(escalationRepository.findByComplaintId(gas.getId())).hasValueSatisfying(escalation ->
+                assertThat(escalation.isAcknowledged()).isFalse());
+        assertThat(eventRepository.findByComplaintIdOrderByCreatedAtAscIdAsc(gas.getId()))
+                .extracting(ComplaintEvent::getType)
+                .containsExactly(ComplaintEventType.CREATED, ComplaintEventType.ESCALATED, ComplaintEventType.AUTO_ASSIGNED);
+    }
+
+    @Test
+    void oneLowConfidenceAndOneFallbackComplaintWaitForReview() {
+        List<Complaint> inReview = complaintRepository.findAll().stream().filter(Complaint::isNeedsReview).toList();
+
+        assertThat(inReview).extracting(Complaint::getClassifiedBy)
+                .containsExactlyInAnyOrder(ClassifiedBy.AI, ClassifiedBy.RULES_FALLBACK);
+        assertThat(only(c -> c.getClassifiedBy() == ClassifiedBy.AI && c.isNeedsReview()).getAiConfidence())
+                .isEqualByComparingTo("0.42");
+        Complaint fallback = only(c -> c.getClassifiedBy() == ClassifiedBy.RULES_FALLBACK);
+        assertThat(fallback.getAiReason())
+                .endsWith(KeywordFallbackClassifier.classify(fallback.getDescription()).reason() + ".");
+        assertThat(fallback.getCategory())
+                .isEqualTo(KeywordFallbackClassifier.classify(fallback.getDescription()).category());
     }
 
     @Test
@@ -113,6 +154,14 @@ class ComplaintDemoSeederTest {
                 SELECT count(*) FROM complaint c JOIN flat f ON f.id = c.flat_id
                 WHERE c.category = 'LIFT' AND f.code LIKE 'T07-%'
                 """, Integer.class)).isZero();
+    }
+
+    private Complaint only(Predicate<Complaint> condition) {
+        return complaintRepository.findAll().stream().filter(condition).collect(Collectors.collectingAndThen(
+                Collectors.toList(), found -> {
+                    assertThat(found).hasSize(1);
+                    return found.getFirst();
+                }));
     }
 
     private List<Complaint> active(String flatCode) {

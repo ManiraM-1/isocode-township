@@ -167,7 +167,7 @@ Behaviour:
 Tests: every legal and illegal transition; reopen counts; rating only on close; resident 403 on other flats' complaints and photos; oversized or non-image photo rejected.
 Commit: `feat(complaints): raise, assign, track and close complaints with response timers`
 
-### [ ] Step 10: AI classification, safety rule and review lane
+### [x] Step 10: AI classification, safety rule and review lane
 - `SafetyRule.check(text)` (pure): configurable term list per A17, Unicode-aware, case-insensitive, word boundaries; returns matched terms. Runs **before** and **independently of** the AI.
 - `ComplaintClassifier` interface; `GeminiComplaintClassifier` calls Gemini `generateContent` with `responseMimeType: application/json` and a response schema `{category (enum), urgency (enum), confidence (0–1), summary (≤ 12 words), reason}`. Sends only the description (A18). 6 s timeout. Validates enums and confidence.
 - `KeywordFallbackClassifier` (pure): keyword → category map, default urgency MEDIUM, confidence 0.5.
