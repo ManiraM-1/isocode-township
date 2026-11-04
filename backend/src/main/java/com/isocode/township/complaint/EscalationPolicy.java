@@ -10,12 +10,12 @@ public final class EscalationPolicy {
     private EscalationPolicy() {
     }
 
-    public static Optional<String> reasonFor(List<String> safetyTerms, ClassifiedBy classifiedBy, Urgency aiUrgency,
+    public static Optional<String> reasonFor(List<String> safetyTerms, ClassificationStatus status, Urgency aiUrgency,
                                              String aiReason) {
         if (!safetyTerms.isEmpty()) {
             return Optional.of(fit("Safety words: " + String.join(", ", safetyTerms)));
         }
-        if (classifiedBy == ClassifiedBy.AI && aiUrgency == Urgency.CRITICAL) {
+        if (status == ClassificationStatus.DONE && aiUrgency == Urgency.CRITICAL) {
             String why = aiReason == null || aiReason.isBlank() ? "no reason given" : aiReason.strip();
             return Optional.of(fit("AI rated critical: " + why));
         }

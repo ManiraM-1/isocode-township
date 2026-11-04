@@ -5,7 +5,6 @@ import com.isocode.township.common.BadRequestException;
 import com.isocode.township.common.ConflictException;
 import com.isocode.township.common.NotFoundException;
 import com.isocode.township.common.SocietySettingsRepository;
-import com.isocode.township.complaint.AutoAssigner.StaffLoad;
 import com.isocode.township.complaint.ComplaintStateMachine.Actor;
 import java.time.Clock;
 import java.time.Instant;
@@ -29,16 +28,19 @@ public class DeskComplaintService {
     private final ComplaintEventRepository eventRepository;
     private final EscalationRepository escalationRepository;
     private final StaffLoads staffLoads;
+    private final ComplaintHandover handover;
     private final SocietySettingsRepository settingsRepository;
     private final Clock clock;
 
     public DeskComplaintService(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                                 EscalationRepository escalationRepository, StaffLoads staffLoads,
+                                ComplaintHandover handover,
                                 SocietySettingsRepository settingsRepository, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.escalationRepository = escalationRepository;
         this.staffLoads = staffLoads;
+        this.handover = handover;
         this.settingsRepository = settingsRepository;
         this.clock = clock;
     }
@@ -127,8 +129,8 @@ public class DeskComplaintService {
                 targets.rescheduleResolve(complaint.getResolveDueAt(), previousUrgency, urgency));
         record(complaint, ComplaintEventType.CATEGORY_CHANGED, staff.userId(), from,
                 classificationLabel(category, urgency), null, now);
-        if (categoryChanged && complaint.getStatus().isActive()) {
-            handOverIfOwnerLacksTheSkill(complaint, now);
+        if (categoryChanged) {
+            handover.handOverIfOwnerLacksTheSkill(complaint, now);
         }
         complaint.recordFirstResponse(now);
         return complaint;
@@ -147,19 +149,6 @@ public class DeskComplaintService {
         record(complaint, ComplaintEventType.ESCALATION_ACKNOWLEDGED, staff.userId(), null, null, null, now);
         complaint.recordFirstResponse(now);
         return complaint;
-    }
-
-    private void handOverIfOwnerLacksTheSkill(Complaint complaint, Instant now) {
-        List<StaffLoad> staff = staffLoads.current();
-        if (AutoAssigner.suits(complaint.getCategory(), complaint.getAssigneeId(), staff)) {
-            return;
-        }
-        Long previous = complaint.getAssigneeId();
-        AutoAssigner.pick(complaint.getCategory(), staff).map(StaffLoad::staffId).ifPresent(staffId -> {
-            complaint.assignTo(staffId);
-            record(complaint, ComplaintEventType.AUTO_ASSIGNED, null, previous == null ? null : previous.toString(),
-                    staffId.toString(), null, now);
-        });
     }
 
     private static String classificationLabel(ComplaintCategory category, Urgency urgency) {

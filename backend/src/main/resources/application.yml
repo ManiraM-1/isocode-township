@@ -41,7 +41,11 @@ app:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
     base-url: https://generativelanguage.googleapis.com
-    timeout: 6s
+    timeout: 20s
+    retry-delay: 2s
+  classification:
+    give-up-after: 2m
+    sweep-every-ms: 60000
   safety:
     terms:
       - fire

@@ -1,6 +1,7 @@
 package com.isocode.township.complaint;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,9 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Complaint c where c.id = :id")
     Optional<Complaint> findLockedById(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Complaint> findByClassificationStatusAndCreatedAtBefore(ClassificationStatus status, Instant cutoff);
 
     @Query("""
             select c from Complaint c

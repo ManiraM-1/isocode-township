@@ -65,9 +65,10 @@ public class ComplaintViews {
                 complaint.getFirstResponseDueAt(), complaint.getFirstResponseAt(), complaint.getResolveDueAt(),
                 complaint.getResolvedAt(), complaint.getClosedAt(), nextDue, isOverdue(nextDue),
                 complaint.getReopenCount(), complaint.getRating().orElse(null), complaint.getRatingComment(),
-                complaint.getClassifiedBy(), complaint.getAiCategory(), complaint.getAiUrgency(),
-                complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(), complaint.isNeedsReview(),
-                complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint), timeline(complaint),
+                complaint.getClassifiedBy(), complaint.getClassificationStatus(), complaint.getAiCategory(),
+                complaint.getAiUrgency(), complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(),
+                complaint.isNeedsReview(), complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint),
+                timeline(complaint),
                 actions(complaint, viewer, escalationOpen(complaint)));
     }
 

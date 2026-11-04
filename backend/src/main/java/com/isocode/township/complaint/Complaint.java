@@ -21,6 +21,8 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "complaint")
 public class Complaint {
 
+    private static final int MAX_AI_REASON = 300;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -71,6 +73,10 @@ public class Complaint {
 
     @Column(name = "needs_review", nullable = false)
     private boolean needsReview;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "classification_status", nullable = false, length = 8)
+    private ClassificationStatus classificationStatus;
 
     @Column(name = "safety_escalated", nullable = false)
     private boolean safetyEscalated;
@@ -134,6 +140,7 @@ public class Complaint {
         this.aiReason = classification.aiReason();
         this.classifiedBy = classification.classifiedBy();
         this.needsReview = classification.needsReview();
+        this.classificationStatus = classification.status();
         this.safetyTerms = classification.safetyTerms().toArray(String[]::new);
         this.safetyEscalated = !classification.safetyTerms().isEmpty();
         this.status = ComplaintStatus.OPEN;
@@ -194,6 +201,41 @@ public class Complaint {
         firstResponseDueAt = newFirstResponseDue;
         resolveDueAt = newResolveDue;
         needsReview = false;
+    }
+
+    public void applyAiClassification(Classification result, Instant newFirstResponseDue, Instant newResolveDue) {
+        category = result.category();
+        urgency = result.urgency();
+        recordAiAnswer(result);
+        classifiedBy = result.classifiedBy();
+        needsReview = result.needsReview();
+        firstResponseDueAt = newFirstResponseDue;
+        resolveDueAt = newResolveDue;
+    }
+
+    public void recordAiSuggestion(Classification result) {
+        recordAiAnswer(result);
+    }
+
+    public void markClassificationFailed(String reason, boolean sendToReview) {
+        classificationStatus = ClassificationStatus.FAILED;
+        aiReason = reason.length() <= MAX_AI_REASON ? reason : reason.substring(0, MAX_AI_REASON - 1) + "…";
+        if (sendToReview) {
+            needsReview = true;
+        }
+    }
+
+    public boolean hasStaffResponse() {
+        return firstResponseAt != null;
+    }
+
+    private void recordAiAnswer(Classification result) {
+        aiCategory = result.aiCategory();
+        aiUrgency = result.aiUrgency();
+        aiConfidence = result.aiConfidence();
+        aiSummary = result.aiSummary();
+        aiReason = result.aiReason();
+        classificationStatus = ClassificationStatus.DONE;
     }
 
     public void attachPhotoType(String contentType) {
@@ -260,6 +302,10 @@ public class Complaint {
         return needsReview;
     }
 
+    public ClassificationStatus getClassificationStatus() {
+        return classificationStatus;
+    }
+
     public boolean isSafetyEscalated() {
         return safetyEscalated;
     }
@@ -318,7 +364,8 @@ public class Complaint {
 
     public record Classification(ComplaintCategory category, Urgency urgency, ComplaintCategory aiCategory,
                                  Urgency aiUrgency, BigDecimal aiConfidence, String aiSummary, String aiReason,
-                                 ClassifiedBy classifiedBy, boolean needsReview, List<String> safetyTerms) {
+                                 ClassifiedBy classifiedBy, boolean needsReview, List<String> safetyTerms,
+                                 ClassificationStatus status) {
 
         public Classification {
             safetyTerms = safetyTerms == null ? List.of() : List.copyOf(safetyTerms);

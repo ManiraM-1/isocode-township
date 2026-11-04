@@ -13,7 +13,7 @@ class KeywordBaselineEvalTest {
     void withTheAiDownKeywordRulesAndTheSafetyRuleStillCatchEveryEmergency() throws Exception {
         ClassificationService rulesOnly = ComplaintEvalSet.serviceWith(description -> {
             throw new AiUnavailableException(Cause.NOT_CONFIGURED, "offline baseline");
-        });
+        }, Duration.ZERO);
 
         Report report = ComplaintEvalSet.evaluate("Keyword fallback baseline (no AI)", rulesOnly, Duration.ZERO);
         System.out.println(report.render());

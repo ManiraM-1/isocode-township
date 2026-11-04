@@ -113,12 +113,13 @@ final class ComplaintEvalSet {
         }
     }
 
-    static ClassificationService serviceWith(AiComplaintModel model) throws IOException {
+    static ClassificationService serviceWith(AiComplaintModel model, Duration retryDelay) throws IOException {
         SocietySettings settings = mock(SocietySettings.class);
         when(settings.getAiConfidenceThreshold()).thenReturn(new BigDecimal("0.60"));
         SocietySettingsRepository settingsRepository = mock(SocietySettingsRepository.class);
         when(settingsRepository.current()).thenReturn(settings);
-        return new ClassificationService(model, new SafetyProperties(configuredSafetyTerms()), settingsRepository);
+        return new ClassificationService(model, new SafetyProperties(configuredSafetyTerms()), settingsRepository,
+                new GeminiProperties(null, null, null, null, retryDelay));
     }
 
     static Report evaluate(String title, ClassificationService service, Duration pauseBetweenCalls)

@@ -32,9 +32,9 @@ class ClassifierEvalTest {
                 "GEMINI_API_KEY is not set in the environment or in .env");
         String model = setting("GEMINI_MODEL", dotEnv).orElse("gemini-3.5-flash-lite");
         GeminiProperties properties = new GeminiProperties(key, model, "https://generativelanguage.googleapis.com",
-                Duration.ofSeconds(6));
+                Duration.ofSeconds(20), Duration.ofSeconds(2));
         ClassificationService service = ComplaintEvalSet.serviceWith(
-                new GeminiComplaintClassifier(RestClient.builder(), properties, new ObjectMapper()));
+                new GeminiComplaintClassifier(RestClient.builder(), properties, new ObjectMapper()), properties.retryDelay());
 
         Report report = ComplaintEvalSet.evaluate("Gemini " + model, service, PAUSE_FOR_FREE_TIER_RATE_LIMIT);
         System.out.println(report.render());

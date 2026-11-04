@@ -162,7 +162,7 @@ class GeminiComplaintClassifierTest {
         slow.start();
         try {
             GeminiProperties shortTimeout = new GeminiProperties(KEY, "gemini-3.5-flash-lite",
-                    "http://127.0.0.1:" + slow.getAddress().getPort(), Duration.ofMillis(300));
+                    "http://127.0.0.1:" + slow.getAddress().getPort(), Duration.ofMillis(300), Duration.ZERO);
             GeminiComplaintClassifier timed = new GeminiComplaintClassifier(RestClient.builder(), shortTimeout, objectMapper);
             long started = System.nanoTime();
 
@@ -187,6 +187,6 @@ class GeminiComplaintClassifierTest {
     }
 
     private static GeminiProperties properties(String key, Duration timeout) {
-        return new GeminiProperties(key, "gemini-3.5-flash-lite", "https://gemini.test", timeout);
+        return new GeminiProperties(key, "gemini-3.5-flash-lite", "https://gemini.test", timeout, Duration.ZERO);
     }
 }

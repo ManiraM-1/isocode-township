@@ -92,7 +92,7 @@ class ComplaintRulesTest {
     @Test
     void aClosedComplaintCannotBeRecategorised() {
         Complaint complaint = new Complaint("CMP-2611-0001", 1L, 2L, "Tap is dripping all day", new Complaint.Classification(
-                ComplaintCategory.PLUMBING, Urgency.LOW, null, null, null, null, null, ClassifiedBy.AI, false, List.of()),
+                ComplaintCategory.PLUMBING, Urgency.LOW, null, null, null, null, null, ClassifiedBy.AI, false, List.of(), ClassificationStatus.DONE),
                 RAISED, RAISED, RAISED);
         complaint.assignTo(RAVI.staffId());
         complaint.moveTo(ComplaintStatus.RESOLVED, ComplaintStateMachine.Actor.STAFF, RAISED);

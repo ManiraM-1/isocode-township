@@ -117,7 +117,7 @@ class DeskComplaintApiTest {
 
     @Test
     void reassigningRecordsWhoFromAndTo() throws Exception {
-        long id = raise("Water is leaking from the bathroom ceiling.");
+        long id = raise("The notice board near the clubhouse needs updating.");
         Long ravi = userRepository.findByPhone("+919000000102").orElseThrow().getId();
 
         reassign(id, ravi, "Plumbing job")
@@ -172,7 +172,7 @@ class DeskComplaintApiTest {
         assertThat(ids(board(Map.of("lane", "OPEN")))).containsExactly(open);
         assertThat(ids(board(Map.of("tower", "t12")))).containsExactlyInAnyOrder(resolved, open);
         assertThat(ids(board(Map.of("tower", "T07")))).isEmpty();
-        assertThat(ids(board(Map.of("category", "OTHER", "status", "RESOLVED")))).containsExactly(resolved);
+        assertThat(ids(board(Map.of("category", "PLUMBING", "status", "RESOLVED")))).containsExactly(resolved);
         assertThat(ids(board(Map.of("lane", "SAFETY")))).isEmpty();
         assertThat(ids(board(Map.of("lane", "OPEN", "status", "RESOLVED")))).isEmpty();
     }

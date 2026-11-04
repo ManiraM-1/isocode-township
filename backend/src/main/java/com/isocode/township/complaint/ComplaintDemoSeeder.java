@@ -89,20 +89,20 @@ public class ComplaintDemoSeeder {
                 "Strong gas smell near the stairs on the third floor, please check quickly.",
                 new Complaint.Classification(ComplaintCategory.OTHER, Urgency.CRITICAL, ComplaintCategory.OTHER,
                         Urgency.HIGH, new BigDecimal("0.88"), "Gas smell near third floor stairs",
-                        "Possible gas leak in a common area.", ClassifiedBy.AI, false, List.of("gas")),
+                        "Possible gas leak in a common area.", ClassifiedBy.AI, false, List.of("gas"), ClassificationStatus.DONE),
                 minutes(40), targets);
 
         writeAssigned(pool.get(4 % pool.size()),
                 "Something is wrong near the basement parking ramp, please send someone to look.",
                 new Complaint.Classification(ComplaintCategory.PARKING, Urgency.LOW, ComplaintCategory.PARKING,
                         Urgency.LOW, new BigDecimal("0.42"), "Unclear issue near parking ramp",
-                        "The text does not say what is wrong.", ClassifiedBy.AI, true, List.of()),
+                        "The text does not say what is wrong.", ClassifiedBy.AI, true, List.of(), ClassificationStatus.DONE),
                 hours(3), targets);
 
         writeAssigned(pool.get(7 % pool.size()), FALLBACK_EXAMPLE,
                 new Complaint.Classification(ComplaintCategory.PLUMBING, Urgency.MEDIUM, ComplaintCategory.PLUMBING,
                         Urgency.MEDIUM, new BigDecimal("0.50"), null, FALLBACK_REASON, ClassifiedBy.RULES_FALLBACK, true,
-                        List.of()),
+                        List.of(), ClassificationStatus.FAILED),
                 hours(2), targets);
     }
 
@@ -140,7 +140,7 @@ public class ComplaintDemoSeeder {
 
         Complaint complaint = complaintRepository.save(new Complaint(refNo(created), flat.getId(), resident.getId(),
                 spec.description(), new Complaint.Classification(spec.category(), spec.urgency(), spec.category(),
-                        spec.urgency(), spec.confidence(), spec.summary(), null, ClassifiedBy.AI, false, List.of()),
+                        spec.urgency(), spec.confidence(), spec.summary(), null, ClassifiedBy.AI, false, List.of(), ClassificationStatus.DONE),
                 created, targets.firstResponseDue(created, spec.urgency()), targets.resolveDue(created, spec.urgency())));
         event(complaint, ComplaintEventType.CREATED, resident.getId(), null, "OPEN", null, created);
         complaint.assignTo(staffId);

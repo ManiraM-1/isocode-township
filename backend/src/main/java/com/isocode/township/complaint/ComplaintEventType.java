@@ -12,5 +12,7 @@ public enum ComplaintEventType {
     ESCALATED,
     ESCALATION_ACKNOWLEDGED,
     LINKED,
-    UNLINKED
+    UNLINKED,
+    CLASSIFIED,
+    AI_SUGGESTED
 }

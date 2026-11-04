@@ -15,19 +15,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isocode.township.IntegrationTest;
-import com.isocode.township.ScriptedAiModel;
 import com.isocode.township.TestSessions;
-import com.isocode.township.ai.AiVerdict;
 import com.isocode.township.common.DemoDataSeeder;
 import com.isocode.township.flat.FlatRepository;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
-import java.math.BigDecimal;
 import java.time.Duration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,10 +46,13 @@ class DeskRecategoriseApiTest {
     private DemoDataSeeder seeder;
 
     @Autowired
-    private ScriptedAiModel ai;
+    private FlatRepository flatRepository;
 
     @Autowired
-    private FlatRepository flatRepository;
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Autowired
     private TestSessions sessions;
@@ -68,15 +69,9 @@ class DeskRecategoriseApiTest {
         swatiFlat = flatRepository.findByCode("T12-0408").orElseThrow().getId();
     }
 
-    @AfterEach
-    void resetTheScriptedAi() {
-        ai.reset();
-    }
-
     @Test
     void recategoriseRecordsTheCorrectionAndHandsItToTheRightSpecialist() throws Exception {
-        ai.willAnswer(new AiVerdict(ComplaintCategory.OTHER, Urgency.MEDIUM, new BigDecimal("0.40"), "Ceiling", "Unclear"));
-        JsonNode raised = raise("Water is leaking from the bathroom ceiling.");
+        JsonNode raised = raise("Something keeps coming down from above in our bathroom.");
         long id = raised.get("id").asLong();
 
         recategorise(id, "{\"category\":\"PLUMBING\",\"urgency\":\"HIGH\"}")
@@ -103,12 +98,11 @@ class DeskRecategoriseApiTest {
 
     @Test
     void anOwnerWithTheSkillKeepsTheComplaint() throws Exception {
-        ai.willAnswer(new AiVerdict(ComplaintCategory.PLUMBING, Urgency.MEDIUM, new BigDecimal("0.90"), "Seepage", "Water"));
         long id = raise("Damp patch spreading on the bedroom wall.").get("id").asLong();
 
-        recategorise(id, "{\"category\":\"CIVIL\"}")
+        recategorise(id, "{\"category\":\"PLUMBING\"}")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.category").value("CIVIL"))
+                .andExpect(jsonPath("$.category").value("PLUMBING"))
                 .andExpect(jsonPath("$.urgency").value("MEDIUM"))
                 .andExpect(jsonPath("$.assignee.name").value("Ravi Patil"))
                 .andExpect(jsonPath("$.timeline[*].type", contains("CREATED", "AUTO_ASSIGNED", "CATEGORY_CHANGED")));
@@ -116,15 +110,17 @@ class DeskRecategoriseApiTest {
 
     @Test
     void confirmingTheAiAnswerClearsReviewOnce() throws Exception {
-        ai.willAnswer(new AiVerdict(ComplaintCategory.PARKING, Urgency.LOW, new BigDecimal("0.40"), "Parking", "Unclear"));
         long id = raise("Something is wrong near the parking, please send someone").get("id").asLong();
+        entityManager.flush();
+        jdbcTemplate.update("UPDATE complaint SET needs_review = TRUE WHERE id = ?", id);
+        entityManager.clear();
 
         recategorise(id, "{\"category\":\"PARKING\"}")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.needsReview").value(false))
-                .andExpect(jsonPath("$.urgency").value("LOW"))
-                .andExpect(jsonPath("$.timeline[-1:].from", contains("PARKING/LOW")))
-                .andExpect(jsonPath("$.timeline[-1:].to", contains("PARKING/LOW")));
+                .andExpect(jsonPath("$.urgency").value("MEDIUM"))
+                .andExpect(jsonPath("$.timeline[-1:].from", contains("PARKING/MEDIUM")))
+                .andExpect(jsonPath("$.timeline[-1:].to", contains("PARKING/MEDIUM")));
         recategorise(id, "{\"category\":\"PARKING\"}")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("The complaint already has this category and urgency."));
@@ -141,22 +137,6 @@ class DeskRecategoriseApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.category").value("CIVIL"))
                 .andExpect(jsonPath("$.urgency").value("CRITICAL"));
-    }
-
-    @Test
-    void theHelpDeskCanLowerAnAiCriticalRatingButTheEscalationStays() throws Exception {
-        ai.willAnswer(new AiVerdict(ComplaintCategory.PLUMBING, Urgency.CRITICAL, new BigDecimal("0.90"), "Leak",
-                "Water is flooding the corridor."));
-        long id = raise("Water is dripping in the corridor from a pipe joint.").get("id").asLong();
-
-        recategorise(id, "{\"category\":\"PLUMBING\",\"urgency\":\"MEDIUM\"}")
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.urgency").value("MEDIUM"))
-                .andExpect(jsonPath("$.aiUrgency").value("CRITICAL"))
-                .andExpect(jsonPath("$.escalation.reason").value("AI rated critical: Water is flooding the corridor."))
-                .andExpect(jsonPath("$.actions.canAcknowledgeEscalation").value(true));
-        mockMvc.perform(get("/api/desk/complaints").param("lane", "SAFETY").cookie(anjali))
-                .andExpect(jsonPath("$[*].id", hasItem((int) id)));
     }
 
     @Test

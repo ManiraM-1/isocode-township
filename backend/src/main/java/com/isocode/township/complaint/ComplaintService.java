@@ -10,6 +10,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +30,14 @@ public class ComplaintService {
     private final ComplaintEscalator escalator;
     private final SocietySettingsRepository settingsRepository;
     private final FlatAccessGuard accessGuard;
+    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public ComplaintService(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                             ComplaintPhotoStore photoStore, ComplaintClassifier classifier, StaffLoads staffLoads,
                             ComplaintEscalator escalator,
-                            SocietySettingsRepository settingsRepository, FlatAccessGuard accessGuard, Clock clock) {
+                            SocietySettingsRepository settingsRepository, FlatAccessGuard accessGuard,
+                            ApplicationEventPublisher events, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.photoStore = photoStore;
@@ -43,6 +46,7 @@ public class ComplaintService {
         this.escalator = escalator;
         this.settingsRepository = settingsRepository;
         this.accessGuard = accessGuard;
+        this.events = events;
         this.clock = clock;
     }
 
@@ -53,7 +57,7 @@ public class ComplaintService {
         Optional<ImageType> photoType = validPhoto(photo);
 
         Instant now = clock.instant();
-        Complaint.Classification classification = classifier.classify(description);
+        Complaint.Classification classification = classifier.provisional(description);
         SlaTargets targets = SlaTargets.from(settingsRepository.current());
         Complaint complaint = complaintRepository.save(new Complaint(nextRefNo(now), flatId, user.userId(),
                 description, classification, now,
@@ -70,6 +74,7 @@ public class ComplaintService {
             complaint.assignTo(staffId);
             record(complaint, ComplaintEventType.AUTO_ASSIGNED, null, null, staffId.toString(), null, now);
         });
+        events.publishEvent(new ComplaintRaised(complaint.getId(), description));
         return complaint;
     }
 

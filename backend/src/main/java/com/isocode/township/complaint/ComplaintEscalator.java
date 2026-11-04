@@ -41,9 +41,10 @@ public class ComplaintEscalator {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<Escalation> escalate(Complaint complaint, Instant now) {
-        Optional<String> reason = EscalationPolicy.reasonFor(complaint.getSafetyTerms(), complaint.getClassifiedBy(),
-                complaint.getAiUrgency(), complaint.getAiReason());
-        if (reason.isEmpty()) {
+        Optional<String> reason = EscalationPolicy.reasonFor(
+                complaint.getSafetyTerms(), complaint.getClassificationStatus(), complaint.getAiUrgency(),
+                complaint.getAiReason());
+        if (reason.isEmpty() || escalationRepository.findByComplaintId(complaint.getId()).isPresent()) {
             return Optional.empty();
         }
         Optional<AppUser> dutyManager = dutyManager();

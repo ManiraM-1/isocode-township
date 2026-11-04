@@ -1,5 +1,6 @@
 package com.isocode.township.complaint.dto;
 
+import com.isocode.township.complaint.ClassificationStatus;
 import com.isocode.township.complaint.ClassifiedBy;
 import com.isocode.township.complaint.ComplaintCategory;
 import com.isocode.township.complaint.ComplaintEventType;
@@ -34,6 +35,7 @@ public record ComplaintDetail(
         Integer rating,
         String ratingComment,
         ClassifiedBy classifiedBy,
+        ClassificationStatus classificationStatus,
         ComplaintCategory aiCategory,
         Urgency aiUrgency,
         BigDecimal aiConfidence,
