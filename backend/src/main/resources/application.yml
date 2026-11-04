@@ -39,7 +39,57 @@ app:
     ttl: 12h
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.5-flash}
+    model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
+    base-url: https://generativelanguage.googleapis.com
+    timeout: 6s
+  safety:
+    terms:
+      - fire
+      - smoke
+      - burning smell
+      - gas
+      - gas leak
+      - lpg
+      - cylinder
+      - lift stuck
+      - stuck in lift
+      - stuck in the lift
+      - trapped
+      - shock
+      - electric shock
+      - current
+      - spark*
+      - short circuit
+      - electrocut*
+      - aag
+      - dhuan
+      - dhuaan
+      - current lag*
+      - jhatka
+      - lift mein phas*
+      - lift me phas*
+      - lift band ho*
+      - आग*
+      - धुआं*
+      - धुआँ*
+      - गैस*
+      - सिलेंडर*
+      - लिफ्ट में फंस*
+      - लिफ्ट में फँस*
+      - फंस*
+      - फँस*
+      - करंट*
+      - झटका*
+      - शॉर्ट सर्किट
+      - चिंगारी
+      - धूर*
+      - गॅस*
+      - सिलिंडर*
+      - लिफ्टमध्ये अडक*
+      - अडक*
+      - शॉक*
+      - ठिणगी*
+      - जळण्याचा वास
 
 management:
   endpoints:
