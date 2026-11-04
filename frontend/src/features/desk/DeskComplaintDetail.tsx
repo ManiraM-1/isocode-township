@@ -57,8 +57,8 @@ function useDeskAction<T>(complaint: ComplaintDetail, send: (body: T) => Promise
 
 function DetailBody({ complaint }: { complaint: ComplaintDetail }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-[1fr_360px] lg:items-start">
+      <div className="space-y-4 lg:col-start-1">
         {complaint.escalation && <EscalationCard complaint={complaint} />}
         <Card className="p-5">
           <div className="flex flex-wrap items-center gap-2">
@@ -78,7 +78,7 @@ function DetailBody({ complaint }: { complaint: ComplaintDetail }) {
               />
             </a>
           )}
-          <dl className="mt-5 grid grid-cols-1 gap-2 border-t border-line pt-4 text-sm sm:grid-cols-2">
+          <dl className="mt-5 grid grid-cols-2 gap-2 border-t border-line pt-4 text-sm">
             <Fact label="First response due" value={formatDateTime(complaint.firstResponseDueAt)} />
             <Fact label="First response" value={complaint.firstResponseAt ? formatDateTime(complaint.firstResponseAt) : "Not yet"} />
             <Fact label="Resolve by" value={formatDateTime(complaint.resolveDueAt)} />
@@ -87,17 +87,17 @@ function DetailBody({ complaint }: { complaint: ComplaintDetail }) {
         </Card>
         <AiCard complaint={complaint} />
         <LinkedCard complaint={complaint} />
-        <Card className="p-5">
-          <h2 className="mb-4 text-[15px] font-semibold text-ink">Timeline</h2>
-          <Timeline entries={complaint.timeline} />
-        </Card>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
         {complaint.actions.canRecategorise && <CategoryCard complaint={complaint} />}
         <StatusCard complaint={complaint} />
         {complaint.actions.canReassign && <AssigneeCard complaint={complaint} />}
         {complaint.actions.canComment && <CommentCard complaint={complaint} />}
       </div>
+      <Card className="p-5 lg:col-start-1">
+        <h2 className="mb-4 text-[15px] font-semibold text-ink">Timeline</h2>
+        <Timeline entries={complaint.timeline} />
+      </Card>
     </div>
   );
 }

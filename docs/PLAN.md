@@ -229,7 +229,7 @@ Commit (two allowed): `feat(web): add help desk complaint board with one-tap rec
 Month picker; KPI row (collection rate vs 90% target, on-time rate, outstanding, reopen rate vs 8% target, median first response); reconciliation line with a balanced check; ageing bar with click-through to the flat list; complaint metrics by category; matching summary; Download CSV; print-friendly layout.
 Commit: `feat(web): add committee dashboard with collections, ageing and complaint metrics`
 
-### [ ] Step 17: Polish and end-to-end check
+### [x] Step 17: Polish and end-to-end check
 - Walk every flow at 360 px and at desktop width. No horizontal scroll, no dead buttons, every async action has loading and error states, all forms validate inline, focus states visible, colour contrast AA.
 - Security pass: no secrets in history (`git log -p | grep -iE "key|secret|password"` reviewed), CSRF working, every desk endpoint role-checked, every flat endpoint membership-checked, upload limits enforced, security headers set.
 - Write `docs/DEMO.md`: a 5-minute reviewer walkthrough (resident pays → help desk imports CSV → queue → complaint with escalation → committee).

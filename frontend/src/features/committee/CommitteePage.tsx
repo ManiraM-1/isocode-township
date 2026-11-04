@@ -158,7 +158,7 @@ function Kpi({ label, value, target, ok, note }: { label: string; value: string;
   return (
     <Card className="p-4">
       <p className="text-xs font-medium text-ink-soft">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-ink">{value}</p>
+      <p className="mt-1 break-words text-xl font-semibold tabular-nums tracking-tight text-ink md:text-2xl">{value}</p>
       {target && (
         <p className={`mt-1 text-xs font-medium ${ok === false ? "text-danger" : ok ? "text-accent" : "text-ink-faint"}`}>
           {ok === true ? "✓ " : ok === false ? "✗ " : ""}
@@ -255,7 +255,7 @@ function AgeingCard({ data, month }: { data: CommitteeOverview; month: string })
       </div>
       {owing.length > 0 && (
         <div className="relative mt-4">
-          <div className="flex h-4 w-full gap-[2px]" role="img" aria-label="Share of dues by age; the table below lists every figure">
+          <div className="flex h-6 w-full gap-[2px]" role="img" aria-label="Share of dues by age; the table below lists every figure">
             {owing.map((bucket) => (
               <Link
                 key={bucket.bucket}

@@ -21,7 +21,7 @@ export function ResidentLayout() {
     <div className="min-h-screen bg-canvas">
       <header className="no-print sticky top-0 z-30 border-b border-line bg-canvas/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-          <span className="text-sm font-semibold text-ink">
+          <span className="min-w-0 truncate text-sm font-semibold text-ink">
             {flatCode || "Township"}
             <span className="ml-2 font-normal text-ink-faint">{me.name}</span>
           </span>

@@ -29,6 +29,11 @@ public class DemoDataSeedRunner implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        seedIfEmpty();
+    }
+
+    @Transactional
+    public void seedIfEmpty() {
         if (coreSeeder.seedIfEmpty()) {
             historySeeder.seed();
             upiIdSeeder.seed();

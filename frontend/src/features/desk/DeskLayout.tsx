@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useMe, useSignOut } from "../../lib/session";
+import { DemoResetButton } from "./DemoResetButton";
 
 export const DESK_NAV = [
   { to: "/desk/complaints", label: "Complaints" },
@@ -38,7 +39,8 @@ export function DeskLayout() {
             ))}
           </ul>
         </nav>
-        <div className="p-3">
+        <div className="space-y-1 p-3">
+          <DemoResetButton />
           <button
             type="button"
             onClick={signOut}
@@ -50,11 +52,14 @@ export function DeskLayout() {
       </aside>
 
       <header className="no-print sticky top-0 z-30 border-b border-line bg-canvas/95 backdrop-blur md:hidden">
-        <div className="flex h-12 items-center justify-between px-4">
+        <div className="relative flex h-12 items-center justify-between px-4">
           <span className="text-sm font-semibold text-ink">Help desk</span>
-          <button type="button" onClick={signOut} className="min-h-touch px-2 text-sm text-ink-soft">
-            Sign out
-          </button>
+          <div className="flex items-center">
+            <DemoResetButton compact />
+            <button type="button" onClick={signOut} className="min-h-touch px-2 text-sm text-ink-soft">
+              Sign out
+            </button>
+          </div>
         </div>
         <nav aria-label="Desk sections" className="flex gap-1 overflow-x-auto px-3 pb-2">
           {DESK_NAV.map((item) => (

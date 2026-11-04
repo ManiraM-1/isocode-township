@@ -6,7 +6,7 @@ export default {
       colors: {
         canvas: "#FAF8F4",
         surface: "#FFFFFF",
-        ink: { DEFAULT: "#1C1B19", soft: "#55524C", faint: "#8A867E" },
+        ink: { DEFAULT: "#1C1B19", soft: "#55524C", faint: "#6F6B63" },
         line: { DEFAULT: "#E7E2D8", strong: "#D3CCBE" },
         accent: { DEFAULT: "#1F5C45", hover: "#184A37", soft: "#E6EFEA", ink: "#FFFFFF" },
         danger: { DEFAULT: "#B4232C", soft: "#FBEAEA" },
