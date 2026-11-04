@@ -225,7 +225,8 @@ class ComplaintClassificationApiTest {
                 .anySatisfy(body -> assertThat(body).contains(raised.get("refNo").asText(), "rated critical by the AI"));
         mockMvc.perform(get("/api/desk/complaints").param("lane", "SAFETY").cookie(anjali))
                 .andExpect(jsonPath("$[0].refNo").value(raised.get("refNo").asText()))
-                .andExpect(jsonPath("$[0].escalationOpen").value(true));
+                .andExpect(jsonPath("$[0].escalationOpen").value(true))
+                .andExpect(jsonPath("$[0].openEscalationId").value(done.at("/escalation/id").asLong()));
     }
 
     @Test

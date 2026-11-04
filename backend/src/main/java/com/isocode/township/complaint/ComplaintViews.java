@@ -59,8 +59,8 @@ public class ComplaintViews {
                 flatCode(complaint.getFlatId()), shortSummary(complaint), complaint.getCategory(), complaint.getUrgency(),
                 complaint.getStatus(), name(complaint.getAssigneeId()), complaint.getCreatedAt(), nextDue,
                 isOverdue(nextDue), complaint.getReopenCount(), complaint.isNeedsReview(),
-                complaint.isSafetyEscalated(), escalationOpen(complaint), parentRefNo(complaint),
-                children(complaint).size(), complaint.getPhotoContentType().isPresent());
+                complaint.isSafetyEscalated(), escalationOpen(complaint), openEscalationId(complaint),
+                parentRefNo(complaint), children(complaint).size(), complaint.getPhotoContentType().isPresent());
     }
 
     public ComplaintDetail detail(Complaint complaint, SessionUser viewer) {
@@ -117,6 +117,13 @@ public class ComplaintViews {
                 .map(escalation -> new EscalationView(escalation.getId(), name(escalation.getDutyManagerId()),
                         escalation.getReason(), escalation.getCreatedAt(), name(escalation.getAcknowledgedBy()),
                         escalation.getAcknowledgedAt()))
+                .orElse(null);
+    }
+
+    private Long openEscalationId(Complaint complaint) {
+        return escalationRepository.findByComplaintId(complaint.getId())
+                .filter(escalation -> !escalation.isAcknowledged())
+                .map(Escalation::getId)
                 .orElse(null);
     }
 

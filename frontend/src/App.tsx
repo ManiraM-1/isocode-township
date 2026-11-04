@@ -13,7 +13,8 @@ import { ComplaintsPage } from "./features/resident/ComplaintsPage";
 import { NewComplaintPage } from "./features/resident/NewComplaintPage";
 import { ComplaintDetailPage } from "./features/resident/ComplaintDetailPage";
 import { DeskLayout } from "./features/desk/DeskLayout";
-import { DeskHome } from "./features/desk/DeskHome";
+import { ComplaintBoard } from "./features/desk/ComplaintBoard";
+import { DeskComplaintDetail } from "./features/desk/DeskComplaintDetail";
 
 export function App() {
   return (
@@ -30,7 +31,8 @@ export function App() {
         <Route path="/complaints/:complaintId" element={<ComplaintDetailPage />} />
       </Route>
       <Route element={<RequireRole role="HELPDESK"><DeskLayout /></RequireRole>}>
-        <Route path="/desk/complaints" element={<DeskHome />} />
+        <Route path="/desk/complaints" element={<ComplaintBoard />} />
+        <Route path="/desk/complaints/:complaintId" element={<DeskComplaintDetail />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -22,6 +22,7 @@ public record ComplaintSummary(
         boolean needsReview,
         boolean safetyEscalated,
         boolean escalationOpen,
+        Long openEscalationId,
         String linkedToRefNo,
         int linkedCount,
         boolean hasPhoto) {

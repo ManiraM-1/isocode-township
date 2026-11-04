@@ -167,7 +167,8 @@ class DeskRecategoriseApiTest {
 
         mockMvc.perform(get("/api/desk/complaints").param("lane", "SAFETY").cookie(anjali))
                 .andExpect(jsonPath("$[0].refNo").value(raised.get("refNo").asText()))
-                .andExpect(jsonPath("$[0].escalationOpen").value(false));
+                .andExpect(jsonPath("$[0].escalationOpen").value(false))
+                .andExpect(jsonPath("$[0].openEscalationId").isEmpty());
         acknowledge(escalationId, anjali)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("This escalation has already been acknowledged."));

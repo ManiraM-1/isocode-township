@@ -106,6 +106,7 @@ export type ComplaintSummary = {
   needsReview: boolean;
   safetyEscalated: boolean;
   escalationOpen: boolean;
+  openEscalationId: number | null;
   linkedToRefNo: string | null;
   linkedCount: number;
   hasPhoto: boolean;
