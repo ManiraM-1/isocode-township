@@ -10,6 +10,7 @@ import com.isocode.township.complaint.dto.ComplaintDetail.Actions;
 import com.isocode.township.complaint.dto.ComplaintDetail.EscalationView;
 import com.isocode.township.complaint.dto.ComplaintDetail.LinkView;
 import com.isocode.township.complaint.dto.ComplaintDetail.LinkedComplaint;
+import com.isocode.township.complaint.dto.ComplaintDetail.LinkedUpdate;
 import com.isocode.township.complaint.dto.ComplaintDetail.Person;
 import com.isocode.township.complaint.dto.ComplaintDetail.TimelineEntry;
 import com.isocode.township.complaint.dto.ComplaintSummary;
@@ -63,6 +64,10 @@ public class ComplaintViews {
     }
 
     public ComplaintDetail detail(Complaint complaint, SessionUser viewer) {
+        return detail(complaint, viewer, null);
+    }
+
+    public ComplaintDetail detail(Complaint complaint, SessionUser viewer, LinkedUpdate linkedUpdate) {
         Instant nextDue = nextDue(complaint);
         return new ComplaintDetail(complaint.getId(), complaint.getRefNo(), complaint.getFlatId(),
                 flatCode(complaint.getFlatId()), name(complaint.getRaisedBy()), complaint.getDescription(),
@@ -74,7 +79,8 @@ public class ComplaintViews {
                 complaint.getClassifiedBy(), complaint.getClassificationStatus(), complaint.getAiCategory(),
                 complaint.getAiUrgency(), complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(),
                 complaint.isNeedsReview(), complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint),
-                link(complaint, viewer), timeline(complaint), actions(complaint, viewer, escalationOpen(complaint)));
+                link(complaint, viewer), timeline(complaint), actions(complaint, viewer, escalationOpen(complaint)),
+                linkedUpdate);
     }
 
     private LinkView link(Complaint complaint, SessionUser viewer) {

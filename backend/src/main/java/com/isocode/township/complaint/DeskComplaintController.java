@@ -51,8 +51,9 @@ public class DeskComplaintController {
     @PatchMapping("/{complaintId}/status")
     public ComplaintDetail changeStatus(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId,
                                         @Valid @RequestBody StatusChangeRequest body) {
-        return views.detail(deskService.changeStatus(staff, complaintId, body.status(), body.note(), body.applyToLinked()),
-                staff);
+        DeskComplaintService.StatusChange change = deskService.changeStatus(staff, complaintId, body.status(), body.note(),
+                body.applyToLinked());
+        return views.detail(change.complaint(), staff, change.linkedUpdate());
     }
 
     @PatchMapping("/{complaintId}/assignee")

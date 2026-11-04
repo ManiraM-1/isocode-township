@@ -6,8 +6,11 @@ import com.isocode.township.common.ConflictException;
 import com.isocode.township.common.NotFoundException;
 import com.isocode.township.common.SocietySettingsRepository;
 import com.isocode.township.complaint.ComplaintStateMachine.Actor;
+import com.isocode.township.complaint.dto.ComplaintDetail.LinkedUpdate;
+import com.isocode.township.complaint.dto.ComplaintDetail.SkippedComplaint;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -65,8 +68,8 @@ public class DeskComplaintService {
     }
 
     @Transactional
-    public Complaint changeStatus(SessionUser staff, Long complaintId, ComplaintStatus target, String note,
-                                  boolean applyToLinked) {
+    public StatusChange changeStatus(SessionUser staff, Long complaintId, ComplaintStatus target, String note,
+                                     boolean applyToLinked) {
         Complaint complaint = locked(complaintId);
         List<Complaint> linked = List.of();
         if (applyToLinked) {
@@ -78,13 +81,36 @@ public class DeskComplaintService {
         Instant now = clock.instant();
         moveAsStaff(complaint, staff, target, clean(note), now);
         String appliedNote = "Applied from " + complaint.getRefNo() + (clean(note) == null ? "" : ": " + clean(note));
+        if (!applyToLinked) {
+            return new StatusChange(complaint, null);
+        }
+        List<String> applied = new ArrayList<>();
+        List<SkippedComplaint> skipped = new ArrayList<>();
         for (Complaint child : linked) {
             Complaint lockedChild = locked(child.getId());
             if (canApply(lockedChild, target)) {
                 moveAsStaff(lockedChild, staff, target, appliedNote, now);
+                applied.add(lockedChild.getRefNo());
+            } else {
+                skipped.add(new SkippedComplaint(lockedChild.getId(), lockedChild.getRefNo(), lockedChild.getStatus(),
+                        skipReason(lockedChild.getStatus(), target)));
             }
         }
-        return complaint;
+        return new StatusChange(complaint, new LinkedUpdate(applied, skipped));
+    }
+
+    private static String skipReason(ComplaintStatus current, ComplaintStatus target) {
+        if (current == target) {
+            return "Already " + label(current) + ".";
+        }
+        return "Cannot move from " + label(current) + " to " + label(target) + ".";
+    }
+
+    private static String label(ComplaintStatus status) {
+        return status.name().toLowerCase(Locale.ROOT).replace('_', ' ');
+    }
+
+    public record StatusChange(Complaint complaint, LinkedUpdate linkedUpdate) {
     }
 
     @Transactional

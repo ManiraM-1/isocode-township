@@ -181,7 +181,9 @@ class DuplicateLinkingApiTest {
 
         changeStatus(first, "{\"status\":\"RESOLVED\",\"note\":\"Lift motor replaced\",\"applyToLinked\":true}")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("RESOLVED"));
+                .andExpect(jsonPath("$.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.linkedUpdate.applied", contains(second.get("refNo").asText())))
+                .andExpect(jsonPath("$.linkedUpdate.skipped").isEmpty());
         detail(second)
                 .andExpect(jsonPath("$.status").value("RESOLVED"))
                 .andExpect(jsonPath("$.firstResponseAt").isNotEmpty())
@@ -190,6 +192,35 @@ class DuplicateLinkingApiTest {
         changeStatus(second, "{\"status\":\"RESOLVED\",\"applyToLinked\":true}")
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("This complaint has no linked complaints."));
+    }
+
+    @Test
+    void theHelpDeskIsToldWhichLinkedComplaintsCouldNotMakeTheMove() throws Exception {
+        JsonNode first = raise(swati, LIFT_DOWN);
+        JsonNode second = raise(neighbour, LIFT_STOPPED);
+        changeStatus(second, "{\"status\":\"RESOLVED\"}").andExpect(status().isOk());
+
+        changeStatus(first, "{\"status\":\"IN_PROGRESS\"}")
+                .andExpect(jsonPath("$.linkedUpdate").isEmpty());
+        changeStatus(first, "{\"status\":\"RESOLVED\",\"applyToLinked\":true}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.linkedUpdate.applied").isEmpty())
+                .andExpect(jsonPath("$.linkedUpdate.skipped[0].refNo").value(second.get("refNo").asText()))
+                .andExpect(jsonPath("$.linkedUpdate.skipped[0].status").value("RESOLVED"))
+                .andExpect(jsonPath("$.linkedUpdate.skipped[0].reason").value("Already resolved."));
+    }
+
+    @Test
+    void aLinkedComplaintThatCannotGoBackIsSkippedWithTheReason() throws Exception {
+        JsonNode first = raise(swati, LIFT_DOWN);
+        JsonNode second = raise(neighbour, LIFT_STOPPED);
+        changeStatus(second, "{\"status\":\"RESOLVED\"}").andExpect(status().isOk());
+
+        changeStatus(first, "{\"status\":\"IN_PROGRESS\",\"applyToLinked\":true}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.linkedUpdate.skipped[0].reason")
+                        .value("Cannot move from resolved to in progress."));
+        detail(second).andExpect(jsonPath("$.status").value("RESOLVED"));
     }
 
     private JsonNode raise(Resident resident, String description) throws Exception {

@@ -47,7 +47,14 @@ public record ComplaintDetail(
         EscalationView escalation,
         LinkView link,
         List<TimelineEntry> timeline,
-        Actions actions) {
+        Actions actions,
+        LinkedUpdate linkedUpdate) {
+
+    public record LinkedUpdate(List<String> applied, List<SkippedComplaint> skipped) {
+    }
+
+    public record SkippedComplaint(Long id, String refNo, ComplaintStatus status, String reason) {
+    }
 
     public record LinkView(boolean root, Long rootId, String rootRefNo, int flatsReporting,
                            List<LinkedComplaint> others) {

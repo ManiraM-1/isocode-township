@@ -130,3 +130,6 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: A35.
 - Open items: none.
 - Next step: Step 12
+
+## 2026-11-04: Step 11 follow-up, apply-to-linked summary
+- `PATCH /api/desk/complaints/{id}/status` with `applyToLinked: true` now returns `linkedUpdate {applied: [refNo], skipped: [{id, refNo, status, reason}]}`, so the help desk sees which linked complaints were left alone and why ("Already resolved.", "Cannot move from resolved to in progress."). Without `applyToLinked` the field is null. A35 updated. Two new tests.
