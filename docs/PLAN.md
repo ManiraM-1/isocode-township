@@ -201,7 +201,7 @@ Commit: `feat(complaints): link duplicate complaints across flats without closin
 Tests: on a hand-built dataset assert each number exactly; reconciliation balances; ageing total equals outstanding; resident 403.
 Commit: `feat(committee): add monthly collections, dues ageing and complaint metrics`
 
-### [ ] Step 13: Frontend scaffold, design system and sign-in
+### [x] Step 13: Frontend scaffold, design system and sign-in
 - Vite + React + TypeScript + Tailwind + React Router + TanStack Query in `/frontend`. Dev server proxies `/api` to `localhost:8080`. One `api.ts` that sends the CSRF header and handles 401 (go to login) and problem-detail errors.
 - **Load the `frontend-design` skill before writing any UI.** Design tokens in `tailwind.config`: warm off-white background, near-black text, one deep-green accent for primary actions, red only for overdue and safety, amber for needs-review. One sans-serif family with tabular figures. Shared components: Button, Card, Badge (status/urgency), Money (Indian grouping, tabular, right-aligned), EmptyState, ErrorState, Skeleton, Toast, Page layout.
 - Login: phone field (+91 prefilled) → OTP screen with 6 boxes, resend timer, attempts message; in demo mode a quiet banner shows the OTP. Demo quick-pick list of the demo users on the login screen (demo mode only).
