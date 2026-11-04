@@ -108,3 +108,13 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Every wildcard in `app.safety.terms` was reviewed. Short stems that also start common words are replaced by explicit forms: आग* (matched आगे, "ahead") → आग, आगी, आगीत, आगीचा, आगीची, आगीचे, आगीमुळे, आगीला; धुआं* (धुआंधार) and धूर* (धूर्त) likewise; spark* (sparkling) → spark, sparks, sparking, sparked. Words ambiguous alone are kept only in phrases: "current" → getting current, got current, current from, current lag*; फंस*/अडक* (payment stuck) only after लिफ्ट, हम, मैं or in first-person forms; झटका/jhatka only as करंट का/बिजली का झटका; "lift band ho*" → lift atak gayi/gaya, lift atki. A33 rewritten.
 - The eval set gains five look-alike non-emergencies (35 rows). Offline baseline: category 91% (32/35), urgency 49%, missed Critical 0 of 7, false alarms 0. 492 tests.
 - `ClassifierEvalTest` reads `GEMINI_API_KEY` and `GEMINI_MODEL` from the environment or from `.env`.
+
+## 2026-11-04: Step 10 follow-up, AI Critical escalates; live Gemini eval
+- A Critical AI rating without safety words now creates an escalation to the duty manager with the reason "AI rated critical: <AI reason>"; safety words still take precedence and keep the complaint locked at Critical. The AI can add an escalation but never remove or lower one; the help desk may lower an AI-only Critical (the escalation stays until acknowledged). The Safety lane lists every escalated complaint. Pure `EscalationPolicy`; `SafetyEscalator` renamed `ComplaintEscalator`. A33 and A34 updated. 502 tests.
+- Live eval, `gemini-3.5-flash-lite`, 35 labelled complaints, run 2026-11-04 with `.\mvnw.cmd test "-Dtest=ClassifierEvalTest" "-DexcludedGroups=" "-Dsurefire.failIfNoSpecifiedTests=false"`:
+  - Category 97% (34/35): English 18/19, Hindi 6/6, Hinglish 6/6, Marathi 4/4. The one miss is "strong gas leak smell near the stairs", labelled Other and answered Plumbing; it was still Critical and escalated.
+  - Urgency 57% (20/35). 14 of the 15 misses are one step higher than the label (Low → Medium, Medium → High, High → Critical for the stranger at the doors); one is lower (High → Medium for the Hindi ceiling leak). No Critical label was rated lower.
+  - Missed Critical 0 of 7; false alarms 0 of 28 (including the five look-alikes).
+  - 5 of 35 calls exceeded the 6 s timeout and were classified by the keyword fallback (sent to review). The figures above include those five.
+  - Offline keyword baseline for comparison: category 91%, urgency 49%, missed Critical 0, false alarms 0.
+- Open items: the timeout rate (5/35, about 14%) on the free tier; a longer timeout would trade response time for fewer fallbacks.
