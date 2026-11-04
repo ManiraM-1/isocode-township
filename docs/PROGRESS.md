@@ -169,3 +169,6 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Tests: Vitest 20 (adds target comparison and the India-time current month). Checked against the running backend: October overview and the 31–60 days drill-down (14 flats, ₹53,303.43).
 - Open items: none for this step.
 - Next step: Step 17
+
+## 2026-11-04: Step 16 follow-up, target and safety wording
+- Decided with Maniram: the collection rate is shown without a target (the 90% target applies only to the on-time rate), and an escalated complaint tells the resident "The duty manager has been alerted. If anyone is in danger, call 112."

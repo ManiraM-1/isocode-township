@@ -51,8 +51,7 @@ function ComplaintBody({ complaint, justRaised }: { complaint: ComplaintDetail; 
 
       {complaint.safetyEscalated && (
         <p role="alert" className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
-          This looks like a safety issue, so the duty manager{complaint.escalation ? `, ${complaint.escalation.dutyManager},` : ""} has
-          been alerted. If anyone is in danger, leave the area and call 112.
+          The duty manager has been alerted. If anyone is in danger, call 112.
         </p>
       )}
 

@@ -107,8 +107,6 @@ function Report({ data, month }: { data: CommitteeOverview; month: string }) {
         <Kpi
           label="Collection rate"
           value={percent(collections.collectionRate)}
-          target={`Target ${collections.onTimeTarget}%`}
-          ok={meetsTarget(collections.collectionRate, collections.onTimeTarget, "atLeast")}
           note={`${formatRupees(collections.collected)} of ${formatRupees(collections.totalDue)} due`}
         />
         <Kpi
