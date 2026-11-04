@@ -144,6 +144,22 @@ class DeskRecategoriseApiTest {
     }
 
     @Test
+    void theHelpDeskCanLowerAnAiCriticalRatingButTheEscalationStays() throws Exception {
+        ai.willAnswer(new AiVerdict(ComplaintCategory.PLUMBING, Urgency.CRITICAL, new BigDecimal("0.90"), "Leak",
+                "Water is flooding the corridor."));
+        long id = raise("Water is dripping in the corridor from a pipe joint.").get("id").asLong();
+
+        recategorise(id, "{\"category\":\"PLUMBING\",\"urgency\":\"MEDIUM\"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.urgency").value("MEDIUM"))
+                .andExpect(jsonPath("$.aiUrgency").value("CRITICAL"))
+                .andExpect(jsonPath("$.escalation.reason").value("AI rated critical: Water is flooding the corridor."))
+                .andExpect(jsonPath("$.actions.canAcknowledgeEscalation").value(true));
+        mockMvc.perform(get("/api/desk/complaints").param("lane", "SAFETY").cookie(anjali))
+                .andExpect(jsonPath("$[*].id", hasItem((int) id)));
+    }
+
+    @Test
     void onlyTheHelpDeskCanRecategoriseAndTheBodyIsChecked() throws Exception {
         long id = raise("The corridor light outside my door is flickering all night.").get("id").asLong();
 

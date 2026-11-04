@@ -80,7 +80,7 @@ public class ComplaintViews {
     }
 
     private boolean escalationOpen(Complaint complaint) {
-        return complaint.isSafetyEscalated() && escalationRepository.findByComplaintId(complaint.getId())
+        return escalationRepository.findByComplaintId(complaint.getId())
                 .map(escalation -> !escalation.isAcknowledged())
                 .orElse(false);
     }

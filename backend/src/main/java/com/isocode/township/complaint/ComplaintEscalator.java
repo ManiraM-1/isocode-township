@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
-public class SafetyEscalator {
+public class ComplaintEscalator {
 
-    private static final Logger log = LoggerFactory.getLogger(SafetyEscalator.class);
+    private static final Logger log = LoggerFactory.getLogger(ComplaintEscalator.class);
 
     private final EscalationRepository escalationRepository;
     private final ComplaintEventRepository eventRepository;
@@ -29,7 +29,7 @@ public class SafetyEscalator {
     private final FlatRepository flatRepository;
     private final OutboxService outboxService;
 
-    public SafetyEscalator(EscalationRepository escalationRepository, ComplaintEventRepository eventRepository,
+    public ComplaintEscalator(EscalationRepository escalationRepository, ComplaintEventRepository eventRepository,
                            AppUserRepository userRepository, FlatRepository flatRepository,
                            OutboxService outboxService) {
         this.escalationRepository = escalationRepository;
@@ -41,25 +41,30 @@ public class SafetyEscalator {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<Escalation> escalate(Complaint complaint, Instant now) {
-        List<String> terms = complaint.getSafetyTerms();
-        if (terms.isEmpty()) {
+        Optional<String> reason = EscalationPolicy.reasonFor(complaint.getSafetyTerms(), complaint.getClassifiedBy(),
+                complaint.getAiUrgency(), complaint.getAiReason());
+        if (reason.isEmpty()) {
             return Optional.empty();
         }
         Optional<AppUser> dutyManager = dutyManager();
         if (dutyManager.isEmpty()) {
-            log.error("Safety complaint {} could not be escalated: no active help-desk staff", complaint.getRefNo());
+            log.error("Complaint {} could not be escalated: no active help-desk staff", complaint.getRefNo());
             return Optional.empty();
         }
-        String reason = "Safety words: " + String.join(", ", terms);
         Escalation escalation = escalationRepository.save(
-                new Escalation(complaint.getId(), dutyManager.get().getId(), reason, now));
+                new Escalation(complaint.getId(), dutyManager.get().getId(), reason.get(), now));
         eventRepository.save(new ComplaintEvent(complaint.getId(), ComplaintEventType.ESCALATED, null, null,
-                dutyManager.get().getId().toString(), reason, now));
+                dutyManager.get().getId().toString(), reason.get(), now));
         String flatCode = flatRepository.findById(complaint.getFlatId()).map(Flat::getCode).orElse("a flat");
-        outboxService.send(dutyManager.get().getId(), MessageChannel.SMS,
-                "URGENT safety complaint " + complaint.getRefNo() + " at " + flatCode + " (" + String.join(", ", terms)
-                        + "). Open the help desk now.");
+        outboxService.send(dutyManager.get().getId(), MessageChannel.SMS, alertText(complaint, flatCode));
         return Optional.of(escalation);
+    }
+
+    private static String alertText(Complaint complaint, String flatCode) {
+        String why = complaint.getSafetyTerms().isEmpty()
+                ? "rated critical by the AI"
+                : String.join(", ", complaint.getSafetyTerms());
+        return "URGENT complaint " + complaint.getRefNo() + " at " + flatCode + " (" + why + "). Open the help desk now.";
     }
 
     private Optional<AppUser> dutyManager() {

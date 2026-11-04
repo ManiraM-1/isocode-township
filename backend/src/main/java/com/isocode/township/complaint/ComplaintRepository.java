@@ -20,7 +20,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Query("""
             select c from Complaint c
             where c.status in :statuses
-              and (:safetyOnly = false or c.safetyEscalated = true)
+              and (:safetyOnly = false or c.safetyEscalated = true
+                   or exists (select e.id from Escalation e where e.complaintId = c.id))
               and (:reviewOnly = false or c.needsReview = true)
               and (:category is null or c.category = :category)
               and (:assigneeId is null or c.assigneeId = :assigneeId)

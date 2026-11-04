@@ -51,20 +51,20 @@ public class ComplaintDemoSeeder {
     private final FlatMemberRepository memberRepository;
     private final AppUserRepository userRepository;
     private final SocietySettingsRepository settingsRepository;
-    private final SafetyEscalator safetyEscalator;
+    private final ComplaintEscalator escalator;
     private final Clock clock;
 
     public ComplaintDemoSeeder(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                                FlatRepository flatRepository, FlatMemberRepository memberRepository,
                                AppUserRepository userRepository, SocietySettingsRepository settingsRepository,
-                               SafetyEscalator safetyEscalator, Clock clock) {
+                               ComplaintEscalator escalator, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.flatRepository = flatRepository;
         this.memberRepository = memberRepository;
         this.userRepository = userRepository;
         this.settingsRepository = settingsRepository;
-        this.safetyEscalator = safetyEscalator;
+        this.escalator = escalator;
         this.clock = clock;
     }
 
@@ -115,9 +115,7 @@ public class ComplaintDemoSeeder {
                 description, classification, created, targets.firstResponseDue(created, classification.urgency()),
                 targets.resolveDue(created, classification.urgency())));
         event(complaint, ComplaintEventType.CREATED, resident.getId(), null, "OPEN", null, created);
-        if (!classification.safetyTerms().isEmpty()) {
-            safetyEscalator.escalate(complaint, created);
-        }
+        escalator.escalate(complaint, created);
         complaint.assignTo(staffId);
         event(complaint, ComplaintEventType.AUTO_ASSIGNED, null, null, staffId.toString(), null, created);
     }

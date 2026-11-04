@@ -4,6 +4,7 @@ import static com.isocode.township.FixedClockConfiguration.NOW;
 import static com.isocode.township.SameOriginCsrf.sameOriginCsrf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -114,6 +115,56 @@ class ComplaintClassificationApiTest {
     void anOrdinaryComplaintIsNotEscalated() throws Exception {
         raise("The corridor light outside my door is flickering all night.")
                 .andExpect(jsonPath("$.safetyEscalated").value(false))
+                .andExpect(jsonPath("$.escalation").isEmpty());
+    }
+
+    @Test
+    void anAiCriticalRatingEscalatesToTheDutyManagerWithoutSafetyWords() throws Exception {
+        ai.willAnswer(new AiVerdict(ComplaintCategory.PLUMBING, Urgency.CRITICAL, new BigDecimal("0.90"), "Corridor flooding",
+                "Water is flooding the corridor from a burst pipe."));
+
+        JsonNode complaint = json(raise("Water is pouring into the corridor from a burst pipe on our floor.")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.urgency").value("CRITICAL"))
+                .andExpect(jsonPath("$.safetyEscalated").value(false))
+                .andExpect(jsonPath("$.safetyTerms").isEmpty())
+                .andExpect(jsonPath("$.escalation.dutyManager").value("Kiran Shinde"))
+                .andExpect(jsonPath("$.escalation.reason")
+                        .value("AI rated critical: Water is flooding the corridor from a burst pipe."))
+                .andExpect(jsonPath("$.timeline[*].type", hasItem("ESCALATED"))));
+
+        Long kiran = userRepository.findByPhone("+919000000106").orElseThrow().getId();
+        assertThat(outboxRepository.findByToUserIdOrderByIdDesc(kiran)).extracting(OutboxMessage::getBody)
+                .anySatisfy(body -> assertThat(body).contains(complaint.get("refNo").asText(), "rated critical by the AI"));
+        mockMvc.perform(get("/api/desk/complaints").param("lane", "SAFETY").cookie(anjali))
+                .andExpect(jsonPath("$[0].refNo").value(complaint.get("refNo").asText()))
+                .andExpect(jsonPath("$[0].escalationOpen").value(true));
+    }
+
+    @Test
+    void safetyWordsAndAnAiCriticalRatingMakeOneEscalationForTheSafetyWords() throws Exception {
+        ai.willAnswer(new AiVerdict(ComplaintCategory.OTHER, Urgency.CRITICAL, new BigDecimal("0.95"), "Gas leak", "Gas leak."));
+
+        raise(GAS).andExpect(jsonPath("$.escalation.reason").value(startsWith("Safety words: gas")))
+                .andExpect(jsonPath("$.timeline[?(@.type == 'ESCALATED')]", hasSize(1)));
+    }
+
+    @Test
+    void anUnsureAiCriticalRatingStillEscalatesAndGoesToReview() throws Exception {
+        ai.willAnswer(new AiVerdict(ComplaintCategory.ELECTRICAL, Urgency.CRITICAL, new BigDecimal("0.40"), "Meter room",
+                "Possible electrical hazard."));
+
+        raise("Something is wrong in the meter room, there is a buzzing noise.")
+                .andExpect(jsonPath("$.needsReview").value(true))
+                .andExpect(jsonPath("$.escalation.reason").value("AI rated critical: Possible electrical hazard."));
+    }
+
+    @Test
+    void theKeywordFallbackNeverEscalatesWithoutSafetyWords() throws Exception {
+        ai.willFail(Cause.ERROR);
+
+        raise("Water is pouring into the corridor from a burst pipe on our floor.")
+                .andExpect(jsonPath("$.classifiedBy").value("RULES_FALLBACK"))
                 .andExpect(jsonPath("$.escalation").isEmpty());
     }
 

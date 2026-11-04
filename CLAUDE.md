@@ -2,6 +2,8 @@
 
 You are building a take-home assignment for Isocode Labs: **Brief 4, a gated township resident app** (Pune, 2,400 flats, 28 towers). The owner of this repo is Maniram (GitHub: ManiraM-1). He is primarily a Java/Spring Boot developer and is new to frontend.
 
+**Always reply in English.**
+
 ## Start of every session (do this first, every time)
 1. Read `docs/PROGRESS.md` to see what is done and what step is next.
 2. Read `docs/PLAN.md` for that step's exact scope and acceptance checks.

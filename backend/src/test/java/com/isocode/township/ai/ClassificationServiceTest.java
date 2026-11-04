@@ -113,7 +113,7 @@ class ClassificationServiceTest {
     }
 
     @Test
-    void theAiCanRaiseUrgencyOnItsOwnWithoutAnEscalation() {
+    void theAiCanRaiseUrgencyOnItsOwnWithoutSafetyTerms() {
         aiSays(ComplaintCategory.PLUMBING, Urgency.CRITICAL, "0.90");
 
         Classification result = service.classify("Water is flooding the corridor from a burst pipe");
