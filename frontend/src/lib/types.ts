@@ -192,7 +192,7 @@ export type StaffMember = { id: number; name: string; skills: Category[]; dutyMa
 
 export type Decision =
   | "AUTO_POSTED"
-  | "RECONCILED"
+  | "RECONCILED_GATEWAY"
   | "SUGGESTED"
   | "CONFLICT"
   | "UNMATCHED"

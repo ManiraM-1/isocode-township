@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { homePathFor, useMe } from "./lib/session";
 import { Role } from "./lib/types";
 import { ErrorState, Skeleton } from "./components/States";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LoginPage } from "./features/auth/LoginPage";
 import { ResidentLayout } from "./features/resident/ResidentLayout";
 import { ResidentHome } from "./features/resident/ResidentHome";
@@ -21,7 +22,9 @@ import { CommitteePage } from "./features/committee/CommitteePage";
 import { AgeingFlatsPage } from "./features/committee/AgeingFlatsPage";
 
 export function App() {
+  const location = useLocation();
   return (
+    <ErrorBoundary resetKey={location.pathname}>
     <Routes>
       <Route path="/login" element={<SignedOutOnly><LoginPage /></SignedOutOnly>} />
       <Route path="/" element={<RoleHome />} />
@@ -44,6 +47,7 @@ export function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ErrorBoundary>
   );
 }
 

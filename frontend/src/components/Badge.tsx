@@ -64,7 +64,7 @@ export function BillStatusBadge({ status }: { status: BillStatus }) {
 
 const DECISION_LABEL: Record<Decision, [string, Tone]> = {
   AUTO_POSTED: ["Posted", "accent"],
-  RECONCILED: ["Reconciled", "accent"],
+  RECONCILED_GATEWAY: ["Reconciled", "accent"],
   SUGGESTED: ["Suggested", "caution"],
   CONFLICT: ["Conflict", "danger"],
   UNMATCHED: ["Unmatched", "caution"],
@@ -75,10 +75,10 @@ const DECISION_LABEL: Record<Decision, [string, Tone]> = {
 };
 
 export function DecisionBadge({ decision }: { decision: Decision }) {
-  const [label, tone] = DECISION_LABEL[decision];
+  const [label, tone] = DECISION_LABEL[decision] ?? [decision, "neutral"];
   return <Badge tone={tone}>{label}</Badge>;
 }
 
 export function decisionLabel(decision: Decision) {
-  return DECISION_LABEL[decision][0];
+  return DECISION_LABEL[decision]?.[0] ?? decision;
 }

@@ -12,7 +12,7 @@ import { useImportDetails } from "./queries";
 
 const COUNTS: { key: keyof BankImportSummary; decision: Decision; tone: string }[] = [
   { key: "autoPosted", decision: "AUTO_POSTED", tone: "text-accent" },
-  { key: "reconciled", decision: "RECONCILED", tone: "text-accent" },
+  { key: "reconciled", decision: "RECONCILED_GATEWAY", tone: "text-accent" },
   { key: "suggested", decision: "SUGGESTED", tone: "text-caution" },
   { key: "conflicts", decision: "CONFLICT", tone: "text-danger" },
   { key: "unmatched", decision: "UNMATCHED", tone: "text-caution" },
