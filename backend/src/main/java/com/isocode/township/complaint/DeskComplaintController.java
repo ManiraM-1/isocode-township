@@ -2,6 +2,7 @@ package com.isocode.township.complaint;
 
 import com.isocode.township.auth.SessionUser;
 import com.isocode.township.complaint.dto.AssigneeChangeRequest;
+import com.isocode.township.complaint.dto.CategoryChangeRequest;
 import com.isocode.township.complaint.dto.CommentRequest;
 import com.isocode.township.complaint.dto.ComplaintDetail;
 import com.isocode.township.complaint.dto.ComplaintSummary;
@@ -57,6 +58,12 @@ public class DeskComplaintController {
     public ComplaintDetail reassign(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId,
                                     @Valid @RequestBody AssigneeChangeRequest body) {
         return views.detail(deskService.reassign(staff, complaintId, body.assigneeId(), body.note()), staff);
+    }
+
+    @PatchMapping("/{complaintId}/category")
+    public ComplaintDetail recategorise(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId,
+                                        @Valid @RequestBody CategoryChangeRequest body) {
+        return views.detail(deskService.recategorise(staff, complaintId, body.category(), body.urgency()), staff);
     }
 
     @PostMapping("/{complaintId}/comments")

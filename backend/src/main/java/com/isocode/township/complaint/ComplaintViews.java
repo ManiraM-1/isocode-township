@@ -68,7 +68,7 @@ public class ComplaintViews {
                 complaint.getClassifiedBy(), complaint.getAiCategory(), complaint.getAiUrgency(),
                 complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(), complaint.isNeedsReview(),
                 complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint), timeline(complaint),
-                actions(complaint, viewer));
+                actions(complaint, viewer, escalationOpen(complaint)));
     }
 
     private EscalationView escalation(Complaint complaint) {
@@ -100,14 +100,15 @@ public class ComplaintViews {
                 .toList();
     }
 
-    private static Actions actions(Complaint complaint, SessionUser viewer) {
+    private static Actions actions(Complaint complaint, SessionUser viewer, boolean escalationOpen) {
         ComplaintStatus status = complaint.getStatus();
         if (viewer.role() == Role.HELPDESK) {
             return new Actions(false, false, status != ComplaintStatus.CLOSED, status.isActive(),
+                    status != ComplaintStatus.CLOSED, escalationOpen,
                     ComplaintStateMachine.nextFor(status, Actor.STAFF));
         }
         boolean resolved = status == ComplaintStatus.RESOLVED;
-        return new Actions(resolved, resolved, false, false, EnumSet.noneOf(ComplaintStatus.class));
+        return new Actions(resolved, resolved, false, false, false, false, EnumSet.noneOf(ComplaintStatus.class));
     }
 
     private Instant nextDue(Complaint complaint) {

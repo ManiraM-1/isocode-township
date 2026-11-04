@@ -58,6 +58,7 @@ public record ComplaintDetail(
     }
 
     public record Actions(boolean canClose, boolean canReopen, boolean canComment, boolean canReassign,
+                          boolean canRecategorise, boolean canAcknowledgeEscalation,
                           Set<ComplaintStatus> statusChanges) {
     }
 }

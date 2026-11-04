@@ -1,5 +1,6 @@
 package com.isocode.township.complaint;
 
+import com.isocode.township.common.ConflictException;
 import com.isocode.township.complaint.ComplaintStateMachine.Actor;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -178,6 +179,21 @@ public class Complaint {
         }
         firstResponseAt = now;
         return true;
+    }
+
+    public void recategorise(ComplaintCategory newCategory, Urgency newUrgency, Instant newFirstResponseDue,
+                             Instant newResolveDue) {
+        if (status == ComplaintStatus.CLOSED) {
+            throw new ConflictException("A closed complaint cannot be recategorised.");
+        }
+        if (safetyEscalated && newUrgency != Urgency.CRITICAL) {
+            throw new ConflictException("Safety words were found in this complaint, so it stays Critical.");
+        }
+        category = newCategory;
+        urgency = newUrgency;
+        firstResponseDueAt = newFirstResponseDue;
+        resolveDueAt = newResolveDue;
+        needsReview = false;
     }
 
     public void attachPhotoType(String contentType) {

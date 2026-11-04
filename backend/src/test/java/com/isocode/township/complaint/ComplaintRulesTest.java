@@ -1,7 +1,9 @@
 package com.isocode.township.complaint;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.isocode.township.common.ConflictException;
 import com.isocode.township.complaint.AutoAssigner.StaffLoad;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -58,6 +60,47 @@ class ComplaintRulesTest {
     @Test
     void nobodyToAssignLeavesItOpen() {
         assertThat(AutoAssigner.pick(ComplaintCategory.NOISE, List.of(RAVI))).isEmpty();
+    }
+
+    @Test
+    void aSpecialistWithTheSkillSuitsTheCategory() {
+        List<StaffLoad> staff = List.of(ANJALI, RAVI, PLUMBER_TWO, PRAKASH);
+
+        assertThat(AutoAssigner.suits(ComplaintCategory.CIVIL, RAVI.staffId(), staff)).isTrue();
+        assertThat(AutoAssigner.suits(ComplaintCategory.LIFT, RAVI.staffId(), staff)).isFalse();
+    }
+
+    @Test
+    void theGeneralDeskSuitsOnlyCategoriesNoSpecialistCovers() {
+        List<StaffLoad> staff = List.of(ANJALI, RAVI, PRAKASH);
+
+        assertThat(AutoAssigner.suits(ComplaintCategory.NOISE, ANJALI.staffId(), staff)).isTrue();
+        assertThat(AutoAssigner.suits(ComplaintCategory.LIFT, ANJALI.staffId(), staff)).isFalse();
+        assertThat(AutoAssigner.suits(ComplaintCategory.LIFT, null, staff)).isFalse();
+    }
+
+    @Test
+    void changingUrgencyKeepsTheResolutionClockStartAndAppliesTheNewTarget() {
+        Instant reopenedAt = RAISED.plusSeconds(3 * 24 * 3600);
+        Instant mediumDue = A14.resolveDue(reopenedAt, Urgency.MEDIUM);
+
+        assertThat(A14.rescheduleResolve(mediumDue, Urgency.MEDIUM, Urgency.HIGH))
+                .isEqualTo(A14.resolveDue(reopenedAt, Urgency.HIGH));
+        assertThat(A14.rescheduleResolve(mediumDue, Urgency.MEDIUM, Urgency.MEDIUM)).isEqualTo(mediumDue);
+    }
+
+    @Test
+    void aClosedComplaintCannotBeRecategorised() {
+        Complaint complaint = new Complaint("CMP-2611-0001", 1L, 2L, "Tap is dripping all day", new Complaint.Classification(
+                ComplaintCategory.PLUMBING, Urgency.LOW, null, null, null, null, null, ClassifiedBy.AI, false, List.of()),
+                RAISED, RAISED, RAISED);
+        complaint.assignTo(RAVI.staffId());
+        complaint.moveTo(ComplaintStatus.RESOLVED, ComplaintStateMachine.Actor.STAFF, RAISED);
+        complaint.close(5, null, RAISED);
+
+        assertThatThrownBy(() -> complaint.recategorise(ComplaintCategory.CIVIL, Urgency.LOW, RAISED, RAISED))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("A closed complaint cannot be recategorised.");
     }
 
     @Test

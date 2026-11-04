@@ -37,6 +37,10 @@ public final class SlaTargets {
         return from.plus(resolution.get(urgency));
     }
 
+    public Instant rescheduleResolve(Instant currentDue, Urgency previous, Urgency next) {
+        return currentDue.minus(resolution.get(previous)).plus(resolution.get(next));
+    }
+
     private void put(Urgency urgency, int firstResponseMinutes, int resolveMinutes) {
         firstResponse.put(urgency, Duration.ofMinutes(firstResponseMinutes));
         resolution.put(urgency, Duration.ofMinutes(resolveMinutes));

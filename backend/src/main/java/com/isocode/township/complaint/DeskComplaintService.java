@@ -4,6 +4,8 @@ import com.isocode.township.auth.SessionUser;
 import com.isocode.township.common.BadRequestException;
 import com.isocode.township.common.ConflictException;
 import com.isocode.township.common.NotFoundException;
+import com.isocode.township.common.SocietySettingsRepository;
+import com.isocode.township.complaint.AutoAssigner.StaffLoad;
 import com.isocode.township.complaint.ComplaintStateMachine.Actor;
 import java.time.Clock;
 import java.time.Instant;
@@ -25,14 +27,19 @@ public class DeskComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final ComplaintEventRepository eventRepository;
+    private final EscalationRepository escalationRepository;
     private final StaffLoads staffLoads;
+    private final SocietySettingsRepository settingsRepository;
     private final Clock clock;
 
     public DeskComplaintService(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
-                                StaffLoads staffLoads, Clock clock) {
+                                EscalationRepository escalationRepository, StaffLoads staffLoads,
+                                SocietySettingsRepository settingsRepository, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
+        this.escalationRepository = escalationRepository;
         this.staffLoads = staffLoads;
+        this.settingsRepository = settingsRepository;
         this.clock = clock;
     }
 
@@ -102,6 +109,61 @@ public class DeskComplaintService {
         record(complaint, ComplaintEventType.COMMENTED, staff.userId(), null, null, text.strip(), now);
         complaint.recordFirstResponse(now);
         return complaint;
+    }
+
+    @Transactional
+    public Complaint recategorise(SessionUser staff, Long complaintId, ComplaintCategory category, Urgency requestedUrgency) {
+        Complaint complaint = locked(complaintId);
+        Urgency previousUrgency = complaint.getUrgency();
+        Urgency urgency = requestedUrgency == null ? previousUrgency : requestedUrgency;
+        boolean categoryChanged = complaint.getCategory() != category;
+        if (!categoryChanged && urgency == previousUrgency && !complaint.isNeedsReview()) {
+            throw new ConflictException("The complaint already has this category and urgency.");
+        }
+        Instant now = clock.instant();
+        String from = classificationLabel(complaint.getCategory(), previousUrgency);
+        SlaTargets targets = SlaTargets.from(settingsRepository.current());
+        complaint.recategorise(category, urgency, targets.firstResponseDue(complaint.getCreatedAt(), urgency),
+                targets.rescheduleResolve(complaint.getResolveDueAt(), previousUrgency, urgency));
+        record(complaint, ComplaintEventType.CATEGORY_CHANGED, staff.userId(), from,
+                classificationLabel(category, urgency), null, now);
+        if (categoryChanged && complaint.getStatus().isActive()) {
+            handOverIfOwnerLacksTheSkill(complaint, now);
+        }
+        complaint.recordFirstResponse(now);
+        return complaint;
+    }
+
+    @Transactional
+    public Complaint acknowledgeEscalation(SessionUser staff, Long escalationId) {
+        Escalation escalation = escalationRepository.findLockedById(escalationId)
+                .orElseThrow(() -> new NotFoundException("Escalation not found"));
+        if (escalation.isAcknowledged()) {
+            throw new ConflictException("This escalation has already been acknowledged.");
+        }
+        Complaint complaint = locked(escalation.getComplaintId());
+        Instant now = clock.instant();
+        escalation.acknowledge(staff.userId(), now);
+        record(complaint, ComplaintEventType.ESCALATION_ACKNOWLEDGED, staff.userId(), null, null, null, now);
+        complaint.recordFirstResponse(now);
+        return complaint;
+    }
+
+    private void handOverIfOwnerLacksTheSkill(Complaint complaint, Instant now) {
+        List<StaffLoad> staff = staffLoads.current();
+        if (AutoAssigner.suits(complaint.getCategory(), complaint.getAssigneeId(), staff)) {
+            return;
+        }
+        Long previous = complaint.getAssigneeId();
+        AutoAssigner.pick(complaint.getCategory(), staff).map(StaffLoad::staffId).ifPresent(staffId -> {
+            complaint.assignTo(staffId);
+            record(complaint, ComplaintEventType.AUTO_ASSIGNED, null, previous == null ? null : previous.toString(),
+                    staffId.toString(), null, now);
+        });
+    }
+
+    private static String classificationLabel(ComplaintCategory category, Urgency urgency) {
+        return category.name() + "/" + urgency.name();
     }
 
     private static Instant nextDeadline(Complaint complaint) {
