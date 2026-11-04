@@ -218,7 +218,7 @@ Bottom navigation: Home, Bills, Complaints.
 - Every screen: loading skeleton, empty state with a helpful action, error state with retry.
 Commit (two allowed): `feat(web): add resident home, bills and test payment flow` and `feat(web): add resident complaint screens with timeline and rating`
 
-### [ ] Step 15: Help desk screens
+### [x] Step 15: Help desk screens
 Desk layout: sidebar on desktop, tabs on mobile: Complaints, Payments, Committee.
 - **Complaints board:** lanes in this order: **Safety escalations** (red, with acknowledge), **Needs review** (AI unsure or fallback), **Open by response deadline** (overdue first), Resolved awaiting resident. Filters by category, status, assignee, tower.
 - **Complaint detail:** text and photo, AI suggestion with confidence and reason, **one-tap category chips** to change category, urgency selector, assignee picker, status buttons for legal transitions only, comment box, linked complaints with unlink, apply-to-linked checkbox.

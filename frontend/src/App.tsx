@@ -15,6 +15,8 @@ import { ComplaintDetailPage } from "./features/resident/ComplaintDetailPage";
 import { DeskLayout } from "./features/desk/DeskLayout";
 import { ComplaintBoard } from "./features/desk/ComplaintBoard";
 import { DeskComplaintDetail } from "./features/desk/DeskComplaintDetail";
+import { PaymentsPage } from "./features/desk/PaymentsPage";
+import { ImportDetailPage } from "./features/desk/ImportDetailPage";
 
 export function App() {
   return (
@@ -33,6 +35,8 @@ export function App() {
       <Route element={<RequireRole role="HELPDESK"><DeskLayout /></RequireRole>}>
         <Route path="/desk/complaints" element={<ComplaintBoard />} />
         <Route path="/desk/complaints/:complaintId" element={<DeskComplaintDetail />} />
+        <Route path="/desk/payments" element={<PaymentsPage />} />
+        <Route path="/desk/payments/imports/:importId" element={<ImportDetailPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
