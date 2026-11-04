@@ -194,3 +194,9 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Tests: 586 backend, 22 frontend.
 - Not done here: the live deployment itself, which needs Maniram's Render and Neon accounts (steps in the hand-over); `<LIVE_URL>` placeholders in README and deployment.md until then.
 - Next step: Step 24
+
+## 2026-11-04: Step 24, Technical design document
+- `docs/TDD.md` covers every point of the brief's submission section: the GitHub URL and a live-link placeholder at the top; what was built against the core slice; architecture and why (one image, same origin, pure decision classes, PostgreSQL as the safety net) with a diagram; the data model (entity diagram and key points); the nine product rules and where each is enforced and tested; the main flows; the matching decision table with its two guards; how the AI works and fails safely, with the live eval (category 97%, urgency 63% with every miss on the cautious side, 0 of 7 Critical missed, 0 of 28 false alarms, 0 of 35 fallbacks) against the keyword baseline; UI and design decisions with screenshots; security; the full assumptions table (A1–A36, copied verbatim from `docs/ASSUMPTIONS.md` when the document is built); what was cut and what is next (auto-close of unrated complaints, separate accounts and committee roles, re-applying overpaid late fees, a per-IP rate limit, the paid Gemini tier); honest limits; and how AI was used.
+- `docs/TDD.pdf` (17 pages, A4) is rendered from the Markdown with diagrams drawn by Mermaid in headless Chrome (tooling kept outside the repository).
+- Open items: replace `<LIVE_URL>` in the TDD, README and deployment.md once the Render service exists, then rebuild the PDF; Maniram to check the "How I used AI" wording.
+- Next step: Step 25 (final check), after the live deployment.

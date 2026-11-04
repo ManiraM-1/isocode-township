@@ -257,5 +257,5 @@ Do these in order, one commit each, and stop when time runs out. Each must meet 
 - [ ] **Step 23: Members and notices**: owner adds or removes family and tenant members; help desk posts notices shown on resident home. `feat(core): add family and tenant members and notices`
 
 ## Part 3: Submission
-- [ ] **Step 24: TDD** in `docs/TDD.md` (converted to PDF for submission): GitHub URL and live link at the top; architecture and why; data model diagram; main flows; matching decision table; how the AI works and fails safely (with the eval accuracy); UI decisions with screenshots of key screens; assumptions table (from `docs/ASSUMPTIONS.md`); what was cut and what is next; honest limits. `docs: add technical design document`
+- [x] **Step 24: TDD** in `docs/TDD.md` (converted to PDF for submission): GitHub URL and live link at the top; architecture and why; data model diagram; main flows; matching decision table; how the AI works and fails safely (with the eval accuracy); UI decisions with screenshots of key screens; assumptions table (from `docs/ASSUMPTIONS.md`); what was cut and what is next; honest limits. `docs: add technical design document`
 - [ ] **Step 25: Final check**: fresh clone, follow `deployment.md` exactly on a clean machine, run all tests, run `docs/DEMO.md` on the live app, then zip TDD PDF + `deployment.md`.
