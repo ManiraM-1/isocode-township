@@ -189,7 +189,7 @@ Commit: `feat(ai): classify complaints with Gemini, escalate safety words by rul
 Tests: lift complaints linked; different tower not linked; dissimilar plumbing text not linked; closed parent not linked; linking never changes status; unlink works.
 Commit: `feat(complaints): link duplicate complaints across flats without closing them`
 
-### [ ] Step 12: Committee view API
+### [x] Step 12: Committee view API
 `GET /api/committee/overview?month=YYYY-MM` (HELPDESK) returns:
 - **Collections:** billed, late fees charged, collected, collection rate; **on-time rate** = bills fully paid by due date ÷ bills due (target line: 90%).
 - **Reconciliation:** opening outstanding + billed + late fees − collections = closing outstanding, with a `balanced: true|false` flag (must be true).
