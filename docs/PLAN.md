@@ -225,7 +225,7 @@ Desk layout: sidebar on desktop, tabs on mobile: Complaints, Payments, Committee
 - **Payments:** upload CSV (drag and drop + file picker, size and type checks) → import summary (counts per decision) → rows table with decision badges and reasons. **Accounts queue:** each row shows amount, date, description, reasons and candidates, with Confirm (when suggested), Assign to flat (searchable picker) and Not maintenance (reason required). Optimistic disable on click so nothing posts twice. In demo mode only, a "Download sample statement" button next to the upload area fetches the generated demo statement (Step 8).
 Commit (two allowed): `feat(web): add help desk complaint board with one-tap recategorise` and `feat(web): add bank statement import and accounts queue`
 
-### [ ] Step 16: Committee screen
+### [x] Step 16: Committee screen
 Month picker; KPI row (collection rate vs 90% target, on-time rate, outstanding, reopen rate vs 8% target, median first response); reconciliation line with a balanced check; ageing bar with click-through to the flat list; complaint metrics by category; matching summary; Download CSV; print-friendly layout.
 Commit: `feat(web): add committee dashboard with collections, ageing and complaint metrics`
 

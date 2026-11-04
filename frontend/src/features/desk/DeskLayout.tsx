@@ -4,6 +4,7 @@ import { useMe, useSignOut } from "../../lib/session";
 export const DESK_NAV = [
   { to: "/desk/complaints", label: "Complaints" },
   { to: "/desk/payments", label: "Payments" },
+  { to: "/desk/committee", label: "Committee" },
 ] as const;
 
 export function DeskLayout() {

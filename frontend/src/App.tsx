@@ -17,6 +17,8 @@ import { ComplaintBoard } from "./features/desk/ComplaintBoard";
 import { DeskComplaintDetail } from "./features/desk/DeskComplaintDetail";
 import { PaymentsPage } from "./features/desk/PaymentsPage";
 import { ImportDetailPage } from "./features/desk/ImportDetailPage";
+import { CommitteePage } from "./features/committee/CommitteePage";
+import { AgeingFlatsPage } from "./features/committee/AgeingFlatsPage";
 
 export function App() {
   return (
@@ -37,6 +39,8 @@ export function App() {
         <Route path="/desk/complaints/:complaintId" element={<DeskComplaintDetail />} />
         <Route path="/desk/payments" element={<PaymentsPage />} />
         <Route path="/desk/payments/imports/:importId" element={<ImportDetailPage />} />
+        <Route path="/desk/committee" element={<CommitteePage />} />
+        <Route path="/desk/committee/ageing/:bucket" element={<AgeingFlatsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
