@@ -1,16 +1,20 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useMe, useSignOut } from "../../lib/session";
+import { EmptyState } from "../../components/States";
 
 export function useResidentFlat() {
   const me = useMe();
   const flat = me.data?.flats[0];
-  return { me: me.data!, flatId: flat?.id ?? null, flatCode: flat?.code ?? "" };
+  return { me: me.data!, flatId: flat?.id ?? 0, flatCode: flat?.code ?? "" };
 }
 
-const NAV = [{ to: "/home", label: "Home", icon: "⌂" }] as const;
+const NAV = [
+  { to: "/home", label: "Home", icon: "⌂" },
+  { to: "/bills", label: "Bills", icon: "₹" },
+] as const;
 
 export function ResidentLayout() {
-  const { me, flatCode } = useResidentFlat();
+  const { me, flatId, flatCode } = useResidentFlat();
   const signOut = useSignOut();
   return (
     <div className="min-h-screen bg-canvas">
@@ -29,7 +33,16 @@ export function ResidentLayout() {
           </button>
         </div>
       </header>
-      <Outlet />
+      {flatId ? (
+        <Outlet />
+      ) : (
+        <main className="mx-auto max-w-2xl px-4 pt-10">
+          <EmptyState
+            title="No flat is linked to your number"
+            body="Please ask the help desk to add you to your flat. Once they do, your dues and complaints appear here."
+          />
+        </main>
+      )}
       <nav
         aria-label="Main"
         className="no-print fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
