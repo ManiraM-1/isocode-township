@@ -18,6 +18,18 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     @Query("select c from Complaint c where c.id = :id")
     Optional<Complaint> findLockedById(@Param("id") Long id);
 
+    List<Complaint> findByParentIdOrderByCreatedAtAscIdAsc(Long parentId);
+
+    boolean existsByParentId(Long parentId);
+
+    @Query("""
+            select c from Complaint c
+            where c.createdAt >= :since and c.status <> :closed
+              and c.flatId in (select f.id from Flat f where f.tower.id = :towerId)
+            """)
+    List<Complaint> recentInTower(@Param("towerId") Long towerId, @Param("since") Instant since,
+                                  @Param("closed") ComplaintStatus closed);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Complaint> findByClassificationStatusAndCreatedAtBefore(ClassificationStatus status, Instant cutoff);
 

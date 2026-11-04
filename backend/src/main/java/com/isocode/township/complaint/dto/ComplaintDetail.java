@@ -45,8 +45,16 @@ public record ComplaintDetail(
         boolean safetyEscalated,
         List<String> safetyTerms,
         EscalationView escalation,
+        LinkView link,
         List<TimelineEntry> timeline,
         Actions actions) {
+
+    public record LinkView(boolean root, Long rootId, String rootRefNo, int flatsReporting,
+                           List<LinkedComplaint> others) {
+    }
+
+    public record LinkedComplaint(Long id, String refNo, String flatCode, ComplaintStatus status) {
+    }
 
     public record EscalationView(Long id, String dutyManager, String reason, Instant raisedAt, String acknowledgedBy,
                                  Instant acknowledgedAt) {
@@ -60,7 +68,7 @@ public record ComplaintDetail(
     }
 
     public record Actions(boolean canClose, boolean canReopen, boolean canComment, boolean canReassign,
-                          boolean canRecategorise, boolean canAcknowledgeEscalation,
-                          Set<ComplaintStatus> statusChanges) {
+                          boolean canRecategorise, boolean canAcknowledgeEscalation, boolean canUnlink,
+                          boolean canApplyToLinked, Set<ComplaintStatus> statusChanges) {
     }
 }

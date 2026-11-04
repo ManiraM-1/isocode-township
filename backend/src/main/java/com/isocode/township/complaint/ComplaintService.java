@@ -30,6 +30,7 @@ public class ComplaintService {
     private final ComplaintEscalator escalator;
     private final SocietySettingsRepository settingsRepository;
     private final FlatAccessGuard accessGuard;
+    private final DuplicateLinker duplicateLinker;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
@@ -37,7 +38,7 @@ public class ComplaintService {
                             ComplaintPhotoStore photoStore, ComplaintClassifier classifier, StaffLoads staffLoads,
                             ComplaintEscalator escalator,
                             SocietySettingsRepository settingsRepository, FlatAccessGuard accessGuard,
-                            ApplicationEventPublisher events, Clock clock) {
+                            DuplicateLinker duplicateLinker, ApplicationEventPublisher events, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.photoStore = photoStore;
@@ -46,6 +47,7 @@ public class ComplaintService {
         this.escalator = escalator;
         this.settingsRepository = settingsRepository;
         this.accessGuard = accessGuard;
+        this.duplicateLinker = duplicateLinker;
         this.events = events;
         this.clock = clock;
     }
@@ -74,6 +76,7 @@ public class ComplaintService {
             complaint.assignTo(staffId);
             record(complaint, ComplaintEventType.AUTO_ASSIGNED, null, null, staffId.toString(), null, now);
         });
+        duplicateLinker.linkIfDuplicate(complaint, now);
         events.publishEvent(new ComplaintRaised(complaint.getId(), description));
         return complaint;
     }

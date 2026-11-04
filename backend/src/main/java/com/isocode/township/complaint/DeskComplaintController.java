@@ -51,7 +51,8 @@ public class DeskComplaintController {
     @PatchMapping("/{complaintId}/status")
     public ComplaintDetail changeStatus(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId,
                                         @Valid @RequestBody StatusChangeRequest body) {
-        return views.detail(deskService.changeStatus(staff, complaintId, body.status(), body.note()), staff);
+        return views.detail(deskService.changeStatus(staff, complaintId, body.status(), body.note(), body.applyToLinked()),
+                staff);
     }
 
     @PatchMapping("/{complaintId}/assignee")
@@ -64,6 +65,11 @@ public class DeskComplaintController {
     public ComplaintDetail recategorise(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId,
                                         @Valid @RequestBody CategoryChangeRequest body) {
         return views.detail(deskService.recategorise(staff, complaintId, body.category(), body.urgency()), staff);
+    }
+
+    @PostMapping("/{complaintId}/unlink")
+    public ComplaintDetail unlink(@AuthenticationPrincipal SessionUser staff, @PathVariable Long complaintId) {
+        return views.detail(deskService.unlink(staff, complaintId), staff);
     }
 
     @PostMapping("/{complaintId}/comments")

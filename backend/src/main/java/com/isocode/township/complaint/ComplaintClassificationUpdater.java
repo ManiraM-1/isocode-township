@@ -21,19 +21,22 @@ public class ComplaintClassificationUpdater {
     private final ComplaintEventRepository eventRepository;
     private final ComplaintEscalator escalator;
     private final ComplaintHandover handover;
+    private final DuplicateLinker duplicateLinker;
     private final SocietySettingsRepository settingsRepository;
     private final Duration giveUpAfter;
     private final Clock clock;
 
     public ComplaintClassificationUpdater(ComplaintRepository complaintRepository,
                                           ComplaintEventRepository eventRepository, ComplaintEscalator escalator,
-                                          ComplaintHandover handover, SocietySettingsRepository settingsRepository,
+                                          ComplaintHandover handover, DuplicateLinker duplicateLinker,
+                                          SocietySettingsRepository settingsRepository,
                                           @Value("${app.classification.give-up-after}") Duration giveUpAfter,
                                           Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.escalator = escalator;
         this.handover = handover;
+        this.duplicateLinker = duplicateLinker;
         this.settingsRepository = settingsRepository;
         this.giveUpAfter = giveUpAfter;
         this.clock = clock;
@@ -63,6 +66,7 @@ public class ComplaintClassificationUpdater {
                     targets.resolveDue(complaint.getCreatedAt(), result.urgency()));
             record(complaint, ComplaintEventType.CLASSIFIED, provisional, suggested, result.aiReason(), now);
             handover.handOverIfOwnerLacksTheSkill(complaint, now);
+            duplicateLinker.relinkAfterCategoryChange(complaint, now);
         }
         escalator.escalate(complaint, now);
     }

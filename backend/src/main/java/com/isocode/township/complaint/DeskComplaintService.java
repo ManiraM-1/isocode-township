@@ -29,18 +29,20 @@ public class DeskComplaintService {
     private final EscalationRepository escalationRepository;
     private final StaffLoads staffLoads;
     private final ComplaintHandover handover;
+    private final DuplicateLinker duplicateLinker;
     private final SocietySettingsRepository settingsRepository;
     private final Clock clock;
 
     public DeskComplaintService(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                                 EscalationRepository escalationRepository, StaffLoads staffLoads,
-                                ComplaintHandover handover,
+                                ComplaintHandover handover, DuplicateLinker duplicateLinker,
                                 SocietySettingsRepository settingsRepository, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.escalationRepository = escalationRepository;
         this.staffLoads = staffLoads;
         this.handover = handover;
+        this.duplicateLinker = duplicateLinker;
         this.settingsRepository = settingsRepository;
         this.clock = clock;
     }
@@ -63,9 +65,40 @@ public class DeskComplaintService {
     }
 
     @Transactional
-    public Complaint changeStatus(SessionUser staff, Long complaintId, ComplaintStatus target, String note) {
+    public Complaint changeStatus(SessionUser staff, Long complaintId, ComplaintStatus target, String note,
+                                  boolean applyToLinked) {
         Complaint complaint = locked(complaintId);
+        List<Complaint> linked = List.of();
+        if (applyToLinked) {
+            linked = complaintRepository.findByParentIdOrderByCreatedAtAscIdAsc(complaint.getId());
+            if (linked.isEmpty()) {
+                throw new ConflictException("This complaint has no linked complaints.");
+            }
+        }
         Instant now = clock.instant();
+        moveAsStaff(complaint, staff, target, clean(note), now);
+        String appliedNote = "Applied from " + complaint.getRefNo() + (clean(note) == null ? "" : ": " + clean(note));
+        for (Complaint child : linked) {
+            Complaint lockedChild = locked(child.getId());
+            if (canApply(lockedChild, target)) {
+                moveAsStaff(lockedChild, staff, target, appliedNote, now);
+            }
+        }
+        return complaint;
+    }
+
+    @Transactional
+    public Complaint unlink(SessionUser staff, Long complaintId) {
+        Complaint complaint = locked(complaintId);
+        if (complaint.getParentId() == null) {
+            throw new ConflictException("This complaint is not linked to another complaint.");
+        }
+        Complaint root = locked(complaint.getParentId());
+        duplicateLinker.unlink(complaint, root, staff.userId(), clock.instant());
+        return complaint;
+    }
+
+    private void moveAsStaff(Complaint complaint, SessionUser staff, ComplaintStatus target, String note, Instant now) {
         ComplaintStatus from = complaint.getStatus();
         if (from == ComplaintStatus.OPEN && target.isActive()) {
             complaint.assignTo(staff.userId());
@@ -75,9 +108,18 @@ public class DeskComplaintService {
         if (complaint.getStatus() != target) {
             complaint.moveTo(target, Actor.STAFF, now);
         }
-        record(complaint, ComplaintEventType.STATUS_CHANGED, staff.userId(), from.name(), target.name(), clean(note), now);
+        record(complaint, ComplaintEventType.STATUS_CHANGED, staff.userId(), from.name(), target.name(), note, now);
         complaint.recordFirstResponse(now);
-        return complaint;
+    }
+
+    private static boolean canApply(Complaint child, ComplaintStatus target) {
+        if (child.getStatus() == target) {
+            return false;
+        }
+        if (child.getStatus() == ComplaintStatus.OPEN && target.isActive()) {
+            return true;
+        }
+        return ComplaintStateMachine.canMove(child.getStatus(), target, Actor.STAFF);
     }
 
     @Transactional
@@ -131,6 +173,7 @@ public class DeskComplaintService {
                 classificationLabel(category, urgency), null, now);
         if (categoryChanged) {
             handover.handOverIfOwnerLacksTheSkill(complaint, now);
+            duplicateLinker.relinkAfterCategoryChange(complaint, now);
         }
         complaint.recordFirstResponse(now);
         return complaint;

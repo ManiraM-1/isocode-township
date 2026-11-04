@@ -296,6 +296,31 @@ class ComplaintClassificationApiTest {
     }
 
     @Test
+    void whenTheAiChangesTheCategoryTheComplaintIsLinkedToTheMatchingGroup() throws Exception {
+        String neighbourPhone = jdbcTemplate.queryForObject("""
+                SELECT u.phone FROM flat f JOIN tower t ON t.id = f.tower_id
+                JOIN flat_member m ON m.flat_id = f.id AND m.active
+                JOIN app_user u ON u.id = m.user_id AND u.phone IS NOT NULL AND u.role = 'RESIDENT'
+                WHERE t.code = 'T12' AND f.code <> 'T12-0408' ORDER BY f.id, u.id LIMIT 1
+                """, String.class);
+        Long neighbourFlat = jdbcTemplate.queryForObject("""
+                SELECT m.flat_id FROM flat_member m JOIN app_user u ON u.id = m.user_id WHERE u.phone = ? AND m.active
+                ORDER BY m.flat_id LIMIT 1
+                """, Long.class, neighbourPhone);
+        ai.willAnswer(new AiVerdict(ComplaintCategory.LIFT, Urgency.HIGH, new BigDecimal("0.92"), "Lift down", "Lift."));
+        JsonNode liftGroup = awaitClassified(json(mockMvc.perform(multipart("/api/flats/{id}/complaints", neighbourFlat)
+                .param("description", "The lift is not working since morning.").with(sameOriginCsrf())
+                .cookie(sessions.sessionFor(neighbourPhone)))));
+
+        JsonNode raised = json(raise("Something makes a loud grinding noise near our floor all evening.")
+                .andExpect(jsonPath("$.link").isEmpty()));
+        JsonNode done = awaitClassified(raised);
+
+        assertThat(done.at("/category").asText()).isEqualTo("LIFT");
+        assertThat(done.at("/link/rootRefNo").asText()).isEqualTo(liftGroup.get("refNo").asText());
+    }
+
+    @Test
     void aHindiSafetyWordEscalatesWhileTheResidentWaits() throws Exception {
         ai.holdAnswers();
 

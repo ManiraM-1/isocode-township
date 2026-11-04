@@ -8,6 +8,8 @@ import com.isocode.township.complaint.ComplaintStateMachine.Actor;
 import com.isocode.township.complaint.dto.ComplaintDetail;
 import com.isocode.township.complaint.dto.ComplaintDetail.Actions;
 import com.isocode.township.complaint.dto.ComplaintDetail.EscalationView;
+import com.isocode.township.complaint.dto.ComplaintDetail.LinkView;
+import com.isocode.township.complaint.dto.ComplaintDetail.LinkedComplaint;
 import com.isocode.township.complaint.dto.ComplaintDetail.Person;
 import com.isocode.township.complaint.dto.ComplaintDetail.TimelineEntry;
 import com.isocode.township.complaint.dto.ComplaintSummary;
@@ -15,6 +17,7 @@ import com.isocode.township.flat.Flat;
 import com.isocode.township.flat.FlatRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -31,15 +34,17 @@ public class ComplaintViews {
             EnumSet.of(ComplaintEventType.AUTO_ASSIGNED, ComplaintEventType.ASSIGNEE_CHANGED,
                     ComplaintEventType.ESCALATED);
 
+    private final ComplaintRepository complaintRepository;
     private final ComplaintEventRepository eventRepository;
     private final EscalationRepository escalationRepository;
     private final AppUserRepository userRepository;
     private final FlatRepository flatRepository;
     private final Clock clock;
 
-    public ComplaintViews(ComplaintEventRepository eventRepository, EscalationRepository escalationRepository,
-                          AppUserRepository userRepository,
+    public ComplaintViews(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
+                          EscalationRepository escalationRepository, AppUserRepository userRepository,
                           FlatRepository flatRepository, Clock clock) {
+        this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.escalationRepository = escalationRepository;
         this.userRepository = userRepository;
@@ -53,7 +58,8 @@ public class ComplaintViews {
                 flatCode(complaint.getFlatId()), shortSummary(complaint), complaint.getCategory(), complaint.getUrgency(),
                 complaint.getStatus(), name(complaint.getAssigneeId()), complaint.getCreatedAt(), nextDue,
                 isOverdue(nextDue), complaint.getReopenCount(), complaint.isNeedsReview(),
-                complaint.isSafetyEscalated(), escalationOpen(complaint), complaint.getPhotoContentType().isPresent());
+                complaint.isSafetyEscalated(), escalationOpen(complaint), parentRefNo(complaint),
+                children(complaint).size(), complaint.getPhotoContentType().isPresent());
     }
 
     public ComplaintDetail detail(Complaint complaint, SessionUser viewer) {
@@ -68,8 +74,36 @@ public class ComplaintViews {
                 complaint.getClassifiedBy(), complaint.getClassificationStatus(), complaint.getAiCategory(),
                 complaint.getAiUrgency(), complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(),
                 complaint.isNeedsReview(), complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint),
-                timeline(complaint),
-                actions(complaint, viewer, escalationOpen(complaint)));
+                link(complaint, viewer), timeline(complaint), actions(complaint, viewer, escalationOpen(complaint)));
+    }
+
+    private LinkView link(Complaint complaint, SessionUser viewer) {
+        Complaint root = complaint.getParentId() == null
+                ? complaint
+                : complaintRepository.findById(complaint.getParentId()).orElse(complaint);
+        List<Complaint> children = children(root);
+        if (children.isEmpty()) {
+            return null;
+        }
+        List<Complaint> group = new ArrayList<>();
+        group.add(root);
+        group.addAll(children);
+        int flats = (int) group.stream().map(Complaint::getFlatId).distinct().count();
+        List<LinkedComplaint> others = viewer.role() != Role.HELPDESK ? List.of() : group.stream()
+                .filter(member -> !member.getId().equals(complaint.getId()))
+                .map(member -> new LinkedComplaint(member.getId(), member.getRefNo(), flatCode(member.getFlatId()),
+                        member.getStatus()))
+                .toList();
+        return new LinkView(root == complaint, root.getId(), root.getRefNo(), flats, others);
+    }
+
+    private List<Complaint> children(Complaint complaint) {
+        return complaintRepository.findByParentIdOrderByCreatedAtAscIdAsc(complaint.getId());
+    }
+
+    private String parentRefNo(Complaint complaint) {
+        return complaint.getParentId() == null ? null
+                : complaintRepository.findById(complaint.getParentId()).map(Complaint::getRefNo).orElse(null);
     }
 
     private EscalationView escalation(Complaint complaint) {
@@ -101,15 +135,16 @@ public class ComplaintViews {
                 .toList();
     }
 
-    private static Actions actions(Complaint complaint, SessionUser viewer, boolean escalationOpen) {
+    private Actions actions(Complaint complaint, SessionUser viewer, boolean escalationOpen) {
         ComplaintStatus status = complaint.getStatus();
         if (viewer.role() == Role.HELPDESK) {
             return new Actions(false, false, status != ComplaintStatus.CLOSED, status.isActive(),
-                    status != ComplaintStatus.CLOSED, escalationOpen,
+                    status != ComplaintStatus.CLOSED, escalationOpen, complaint.getParentId() != null,
+                    complaintRepository.existsByParentId(complaint.getId()),
                     ComplaintStateMachine.nextFor(status, Actor.STAFF));
         }
         boolean resolved = status == ComplaintStatus.RESOLVED;
-        return new Actions(resolved, resolved, false, false, false, false, EnumSet.noneOf(ComplaintStatus.class));
+        return new Actions(resolved, resolved, false, false, false, false, false, false, EnumSet.noneOf(ComplaintStatus.class));
     }
 
     private Instant nextDue(Complaint complaint) {

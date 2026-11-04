@@ -238,6 +238,14 @@ public class Complaint {
         classificationStatus = ClassificationStatus.DONE;
     }
 
+    public void linkTo(Long rootId) {
+        parentId = rootId;
+    }
+
+    public void unlink() {
+        parentId = null;
+    }
+
     public void attachPhotoType(String contentType) {
         photoContentType = contentType;
     }

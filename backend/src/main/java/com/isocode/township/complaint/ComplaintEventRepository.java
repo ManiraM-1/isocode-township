@@ -7,5 +7,7 @@ public interface ComplaintEventRepository extends Repository<ComplaintEvent, Lon
 
     <S extends ComplaintEvent> S save(S event);
 
+    boolean existsByComplaintIdAndType(Long complaintId, ComplaintEventType type);
+
     List<ComplaintEvent> findByComplaintIdOrderByCreatedAtAscIdAsc(Long complaintId);
 }
