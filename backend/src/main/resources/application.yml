@@ -46,6 +46,10 @@ app:
   classification:
     give-up-after: 2m
     sweep-every-ms: 60000
+  duplicates:
+    lift-window: 24h
+    text-window: 72h
+    minimum-similarity: 0.35
   safety:
     terms:
       - fire
