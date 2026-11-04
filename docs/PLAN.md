@@ -180,7 +180,7 @@ Tests (no network; mock the HTTP client): AI says LOW but text contains "gas lea
 Commit: `feat(ai): classify complaints with Gemini, escalate safety words by rule and fall back safely`
 (Optionally a second commit: `test(ai): add labelled complaint set and offline classifier evaluation`.)
 
-### [ ] Step 11: Duplicate linking
+### [x] Step 11: Duplicate linking
 - Pure `DuplicateDetector.findParent(newComplaint, recentOpenComplaints)` per A19: same tower, same category, different flat, parent not CLOSED; LIFT within 24 h on tower + category alone; others within 72 h with token Jaccard similarity ≥ 0.35 (lowercased, punctuation and a small stopword list removed). Link to the earliest root (no chains).
 - Linking sets `parent_id`, writes `LINKED` events on both, never changes status.
 - `POST /api/desk/complaints/{id}/unlink`; `GET` detail shows "linked to CMP-… (n flats reported this)".

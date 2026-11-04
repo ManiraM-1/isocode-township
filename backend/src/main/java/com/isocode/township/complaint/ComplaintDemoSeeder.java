@@ -41,6 +41,16 @@ public class ComplaintDemoSeeder {
             ComplaintCategory.PEST_CONTROL, "+919000000105",
             ComplaintCategory.SECURITY, "+919000000106"));
     private static final String GENERAL_DESK_PHONE = "+919000000101";
+    private static final List<LiftReport> LIFT_REPORTS = List.of(
+            new LiftReport("Lift A is not working since morning, we are using the stairs.", "Lift A not working", hours(5)),
+            new LiftReport("Lift stopped at the ground floor and the doors will not open.", "Lift doors will not open",
+                    Duration.ofMinutes(260)),
+            new LiftReport("Lift band hai, my father cannot climb to the 11th floor.", "Lift down, elderly resident cannot climb",
+                    Duration.ofMinutes(220)),
+            new LiftReport("The lift display is blank and the call button does nothing.", "Lift display blank", hours(3)),
+            new LiftReport("लिफ्ट सुबह से बंद है, कृपया जल्दी ठीक करवाइए।", "Lift down since morning", hours(2)),
+            new LiftReport("Still no lift in our wing, any update on the repair?", "Asking for lift repair update",
+                    Duration.ofMinutes(70)));
     static final String FALLBACK_EXAMPLE = "Pani nahi aa raha hai since morning, tank khali lagta hai.";
     static final String FALLBACK_REASON =
             "AI unavailable: the AI did not answer within the time limit. Keyword rules matched tank, pani.";
@@ -82,6 +92,7 @@ public class ComplaintDemoSeeder {
             write(spec, flat, targets);
         }
         seedAiExamples(pool, targets);
+        seedLiftDuplicates(pool, targets);
     }
 
     private void seedAiExamples(List<Flat> pool, SlaTargets targets) {
@@ -106,8 +117,33 @@ public class ComplaintDemoSeeder {
                 hours(2), targets);
     }
 
-    private void writeAssigned(Flat flat, String description, Complaint.Classification classification,
-                               Duration ago, SlaTargets targets) {
+    private void seedLiftDuplicates(List<Flat> pool, SlaTargets targets) {
+        List<Flat> towerSeven = pool.stream().filter(flat -> flat.getCode().startsWith(LIFT_DUPLICATE_TOWER)).toList();
+        Complaint root = null;
+        for (int index = 0; index < Math.min(LIFT_REPORTS.size(), towerSeven.size()); index++) {
+            LiftReport report = LIFT_REPORTS.get(index);
+            Complaint complaint = writeAssigned(towerSeven.get(index), report.description(),
+                    new Complaint.Classification(ComplaintCategory.LIFT, Urgency.HIGH, ComplaintCategory.LIFT, Urgency.HIGH,
+                            new BigDecimal("0.9" + index), report.summary(), "The lift is out of service.", ClassifiedBy.AI,
+                            false, List.of(), ClassificationStatus.DONE),
+                    report.ago(), targets);
+            if (root == null) {
+                root = complaint;
+                Instant response = complaint.getCreatedAt().plus(minutes(20));
+                complaint.moveTo(ComplaintStatus.IN_PROGRESS, Actor.STAFF, response);
+                complaint.recordFirstResponse(response);
+                event(complaint, ComplaintEventType.STATUS_CHANGED, complaint.getAssigneeId(), "ASSIGNED", "IN_PROGRESS",
+                        "Lift technician called; lift A is out of service", response);
+            } else {
+                complaint.linkTo(root.getId());
+                event(complaint, ComplaintEventType.LINKED, null, null, root.getRefNo(), null, complaint.getCreatedAt());
+                event(root, ComplaintEventType.LINKED, null, null, complaint.getRefNo(), null, complaint.getCreatedAt());
+            }
+        }
+    }
+
+    private Complaint writeAssigned(Flat flat, String description, Complaint.Classification classification,
+                                    Duration ago, SlaTargets targets) {
         Instant created = clock.instant().minus(ago);
         AppUser resident = signInResident(flat).orElseThrow();
         Long staffId = staffFor(classification.category());
@@ -118,6 +154,7 @@ public class ComplaintDemoSeeder {
         escalator.escalate(complaint, created);
         complaint.assignTo(staffId);
         event(complaint, ComplaintEventType.AUTO_ASSIGNED, null, null, staffId.toString(), null, created);
+        return complaint;
     }
 
     private static Flat pooledFlat(List<Flat> pool, Spec spec) {
@@ -315,6 +352,9 @@ public class ComplaintDemoSeeder {
 
     private static Duration days(long value) {
         return Duration.ofDays(value);
+    }
+
+    record LiftReport(String description, String summary, Duration ago) {
     }
 
     enum Outcome {

@@ -10,6 +10,7 @@ import com.isocode.township.ai.SafetyRule;
 import com.isocode.township.common.DemoDataSeeder;
 import com.isocode.township.flat.FlatRepository;
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Predicate;
@@ -55,10 +56,10 @@ class ComplaintDemoSeederTest {
     }
 
     @Test
-    void aboutThirtyComplaintsPlusThreeAiExamplesCoverEveryStatusAndMostCategories() {
+    void aboutThirtyComplaintsPlusAiExamplesAndLiftDuplicatesCoverEveryStatus() {
         List<Complaint> complaints = complaintRepository.findAll();
 
-        assertThat(complaints).hasSize(33);
+        assertThat(complaints).hasSize(39);
         assertThat(complaints).extracting(Complaint::getStatus)
                 .containsAll(EnumSet.complementOf(EnumSet.of(ComplaintStatus.OPEN)))
                 .doesNotContain(ComplaintStatus.OPEN);
@@ -149,11 +150,24 @@ class ComplaintDemoSeederTest {
     }
 
     @Test
-    void noLiftComplaintIsInTowerSevenWhereStepElevenSeedsDuplicates() {
-        assertThat(jdbcTemplate.queryForObject("""
-                SELECT count(*) FROM complaint c JOIN flat f ON f.id = c.flat_id
-                WHERE c.category = 'LIFT' AND f.code LIKE 'T07-%'
-                """, Integer.class)).isZero();
+    void sixLiftComplaintsFromDifferentTowerSevenFlatsAreLinkedToTheFirst() {
+        List<Complaint> lifts = jdbcTemplate.queryForList("""
+                SELECT c.id FROM complaint c JOIN flat f ON f.id = c.flat_id
+                WHERE c.category = 'LIFT' AND f.code LIKE 'T07-%' ORDER BY c.created_at
+                """, Long.class).stream().map(id -> complaintRepository.findById(id).orElseThrow()).toList();
+
+        assertThat(lifts).hasSize(6);
+        assertThat(lifts).extracting(Complaint::getFlatId).doesNotHaveDuplicates();
+        Complaint root = lifts.getFirst();
+        assertThat(root.getParentId()).isNull();
+        assertThat(root.getStatus()).isEqualTo(ComplaintStatus.IN_PROGRESS);
+        assertThat(lifts.subList(1, 6)).allSatisfy(child -> {
+            assertThat(child.getParentId()).isEqualTo(root.getId());
+            assertThat(child.getStatus()).isEqualTo(ComplaintStatus.ASSIGNED);
+        });
+        assertThat(Duration.between(root.getCreatedAt(), lifts.getLast().getCreatedAt())).isLessThan(Duration.ofHours(6));
+        assertThat(eventRepository.findByComplaintIdOrderByCreatedAtAscIdAsc(root.getId()))
+                .filteredOn(event -> event.getType() == ComplaintEventType.LINKED).hasSize(5);
     }
 
     private Complaint only(Predicate<Complaint> condition) {
