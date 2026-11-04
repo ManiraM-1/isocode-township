@@ -200,3 +200,8 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - `docs/TDD.pdf` (17 pages, A4) is rendered from the Markdown with diagrams drawn by Mermaid in headless Chrome (tooling kept outside the repository).
 - Open items: replace `<LIVE_URL>` in the TDD, README and deployment.md once the Render service exists, then rebuild the PDF; Maniram to check the "How I used AI" wording.
 - Next step: Step 25 (final check), after the live deployment.
+
+## 2026-11-04: End of session
+- Deployed live at https://<your-url> (health OK).
+- Open bug: Sign out doesn't work on the live app, fix it next session.
+- Then: live URL into TDD/README, rebuild TDD.pdf, run DEMO.md on live, then zip and submit.
