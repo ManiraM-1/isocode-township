@@ -18,10 +18,10 @@ class KeywordBaselineEvalTest {
         Report report = ComplaintEvalSet.evaluate("Keyword fallback baseline (no AI)", rulesOnly, Duration.ZERO);
         System.out.println(report.render());
 
-        assertThat(report.outcomes()).hasSize(30);
+        assertThat(report.outcomes()).hasSize(35);
         assertThat(report.missedCriticals()).isZero();
         assertThat(report.falseAlarms()).isZero();
-        assertThat(report.fallbacks()).isEqualTo(30);
+        assertThat(report.fallbacks()).isEqualTo(35);
         assertThat(report.categoryAccuracy()).isGreaterThanOrEqualTo(0.85);
     }
 }

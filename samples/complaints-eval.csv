@@ -29,3 +29,8 @@ mr,PLUMBING,MEDIUM,"स्वयंपाकघरातील नळ सतत 
 mr,LIFT,CRITICAL,"लिफ्टमध्ये अडकलो आहोत, लवकर मदत पाठवा."
 mr,OTHER,CRITICAL,"जिन्याजवळ गॅसचा वास येत आहे."
 mr,CIVIL,MEDIUM,"भिंतीला तडे गेले आहेत आणि ओल येत आहे."
+hi,HOUSEKEEPING,LOW,"गेट के आगे कचरा पड़ा है।"
+hi,ELECTRICAL,MEDIUM,"आगे वाली लाइट खराब है।"
+en,HOUSEKEEPING,LOW,"The fireplace in the clubhouse lounge needs cleaning."
+en,PLUMBING,MEDIUM,"The gasket of the tap is broken and it keeps dripping."
+en,PARKING,LOW,"Every evening a visitor's car parked in front of my garage blocks it."

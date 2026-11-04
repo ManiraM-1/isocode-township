@@ -103,3 +103,8 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - New assumptions: A33, A34.
 - Open items: the Gemini accuracy figure for the TDD is pending a run with a real key.
 - Next step: Step 11
+
+## 2026-11-04: Step 10 fix, safety-word false positives
+- Every wildcard in `app.safety.terms` was reviewed. Short stems that also start common words are replaced by explicit forms: आग* (matched आगे, "ahead") → आग, आगी, आगीत, आगीचा, आगीची, आगीचे, आगीमुळे, आगीला; धुआं* (धुआंधार) and धूर* (धूर्त) likewise; spark* (sparkling) → spark, sparks, sparking, sparked. Words ambiguous alone are kept only in phrases: "current" → getting current, got current, current from, current lag*; फंस*/अडक* (payment stuck) only after लिफ्ट, हम, मैं or in first-person forms; झटका/jhatka only as करंट का/बिजली का झटका; "lift band ho*" → lift atak gayi/gaya, lift atki. A33 rewritten.
+- The eval set gains five look-alike non-emergencies (35 rows). Offline baseline: category 91% (32/35), urgency 49%, missed Critical 0 of 7, false alarms 0. 492 tests.
+- `ClassifierEvalTest` reads `GEMINI_API_KEY` and `GEMINI_MODEL` from the environment or from `.env`.

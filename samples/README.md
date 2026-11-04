@@ -42,7 +42,7 @@ Totals: 5 auto-posted, 1 reconciled, 6 suggested, 3 conflicts, 2 unmatched, 2 du
 
 ## `complaints-eval.csv`
 
-Thirty labelled complaint texts for measuring the classifier (Step 10): 16 English, 6 Hinglish, 4 Hindi, 4 Marathi. Columns: `language, category, urgency, text`. All texts are invented. The seven Critical rows are emergencies the safety rule must catch whatever the AI says.
+Thirty-five labelled complaint texts for measuring the classifier (Step 10): 19 English, 6 Hinglish, 6 Hindi, 4 Marathi. Columns: `language, category, urgency, text`. All texts are invented. The seven Critical rows are emergencies the safety rule must catch whatever the AI says; five rows contain look-alikes of safety words (आगे, fireplace, gasket, "parked in front") that must not escalate.
 
 - `KeywordBaselineEvalTest` runs in every build with the AI switched off and checks that the keyword fallback plus the safety rule miss no Critical row and raise no false alarm.
 - `ClassifierEvalTest` calls Gemini and is excluded from normal builds. Run it with a key:

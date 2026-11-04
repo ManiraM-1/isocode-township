@@ -31,7 +31,7 @@ class SafetyRuleTest {
     void englishSafetyWordsAreFoundInAnyCase() {
         assertThat(rule.check("There is a GAS LEAK near the stairs")).contains("gas", "gas leak");
         assertThat(rule.check("Our lift stuck between floors 8 and 9")).contains("lift stuck");
-        assertThat(rule.check("Sparks are coming from the meter box")).contains("spark");
+        assertThat(rule.check("Sparks are coming from the meter box")).contains("sparks");
         assertThat(rule.check("My son got an electric shock from the switch")).contains("shock", "electric shock");
     }
 
@@ -80,6 +80,44 @@ class SafetyRuleTest {
             "Seedhi par dhuan hai"
     })
     void hinglishSafetyWordsEscalate(String complaint) {
+        assertThat(rule.check(complaint)).isNotEmpty();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "गेट के आगे कचरा पड़ा है",
+            "आगे वाली लाइट खराब है",
+            "the fireplace",
+            "gasket of the tap is broken",
+            "car parked in front",
+            "Please send the current month maintenance bill",
+            "Floor polish is not sparkling after cleaning",
+            "मेरे पैसे फंसे हैं, रसीद नहीं मिली",
+            "माझे पैसे अडकले आहेत",
+            "पेमेंट फंस गया है, अभी तक नहीं दिखा",
+            "कल धुआंधार बारिश से पार्किंग में पानी भर गया",
+            "Lift band hogi kal 10 baje maintenance ke liye",
+            "Lift jhatka deti hai rukte waqt",
+            "Bill dekh ke bada jhatka laga"
+    })
+    void commonWordsThatLookLikeSafetyWordsDoNotEscalate(String complaint) {
+        assertThat(rule.check(complaint)).isEmpty();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "रसोई में आग लगी है",
+            "मीटर बॉक्स में आग लग गई",
+            "इमारतीला आगीमुळे धोका आहे",
+            "आगीत सामान जळाले",
+            "हम फंस गए हैं, दरवाज़ा नहीं खुल रहा",
+            "मैं बाथरूम में फँस गई हूं",
+            "बिजली का झटका लगा",
+            "Getting current from the geyser switch",
+            "Lift atak gayi hai 5th floor pe",
+            "Hum phas gaye hain stairs ke door mein"
+    })
+    void explicitFormsStillEscalate(String complaint) {
         assertThat(rule.check(complaint)).isNotEmpty();
     }
 

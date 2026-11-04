@@ -57,39 +57,88 @@ app:
       - trapped
       - shock
       - electric shock
-      - current
-      - spark*
+      - getting current
+      - got current
+      - current from
+      - spark
+      - sparks
+      - sparking
+      - sparked
       - short circuit
-      - electrocut*
+      - electrocute
+      - electrocuted
+      - electrocution
       - aag
       - dhuan
       - dhuaan
       - current lag*
-      - jhatka
+      - current aa raha
+      - current ka jhatka
+      - bijli ka jhatka
       - lift mein phas*
       - lift me phas*
-      - lift band ho*
-      - आग*
-      - धुआं*
-      - धुआँ*
-      - गैस*
-      - सिलेंडर*
+      - hum phas*
+      - lift atak gayi
+      - lift atak gaya
+      - lift atki
+      - आग
+      - आगी
+      - आगीत
+      - आगीचा
+      - आगीची
+      - आगीचे
+      - आगीमुळे
+      - आगीला
+      - धुआं
+      - धुआँ
+      - धुंआ
+      - धुएं
+      - धुएँ
+      - गैस
+      - सिलेंडर
       - लिफ्ट में फंस*
       - लिफ्ट में फँस*
-      - फंस*
-      - फँस*
-      - करंट*
-      - झटका*
+      - हम फंस*
+      - हम फँस*
+      - मैं फंस*
+      - मैं फँस*
+      - फंस गया हूं
+      - फंस गया हूँ
+      - फंस गई हूं
+      - फंस गई हूँ
+      - फँस गया हूं
+      - फँस गया हूँ
+      - फँस गई हूं
+      - फँस गई हूँ
+      - करंट
+      - करेंट
+      - करंट का झटका
+      - बिजली का झटका
       - शॉर्ट सर्किट
       - चिंगारी
-      - धूर*
-      - गॅस*
-      - सिलिंडर*
+      - चिंगारियां
+      - चिंगारियाँ
+      - धूर
+      - धुराचा
+      - धुराचे
+      - धुरामुळे
+      - धुराने
+      - गॅस
+      - गॅसचा
+      - गॅसची
+      - गॅसचे
+      - गॅसमुळे
+      - गॅसगळती
+      - सिलिंडर
+      - सिलिंडरचा
       - लिफ्टमध्ये अडक*
-      - अडक*
-      - शॉक*
-      - ठिणगी*
+      - अडकलो
+      - अडकलोय
+      - शॉक
+      - ठिणगी
+      - ठिणग्या
       - जळण्याचा वास
+
 
 management:
   endpoints:

@@ -21,7 +21,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class ClassificationServiceTest {
 
-    private static final List<String> SAFETY_TERMS = List.of("fire", "gas", "gas leak", "lift stuck", "गैस*", "गॅस*");
+    private static final List<String> SAFETY_TERMS = List.of("fire", "gas", "gas leak", "lift stuck", "गैस", "गॅसचा");
 
     private AiComplaintModel ai;
     private ClassificationService service;
