@@ -38,11 +38,17 @@ public record ComplaintDetail(
         Urgency aiUrgency,
         BigDecimal aiConfidence,
         String aiSummary,
+        String aiReason,
         boolean needsReview,
         boolean safetyEscalated,
         List<String> safetyTerms,
+        EscalationView escalation,
         List<TimelineEntry> timeline,
         Actions actions) {
+
+    public record EscalationView(Long id, String dutyManager, String reason, Instant raisedAt, String acknowledgedBy,
+                                 Instant acknowledgedAt) {
+    }
 
     public record Person(Long id, String name) {
     }

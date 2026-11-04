@@ -61,6 +61,9 @@ public class Complaint {
     @Column(name = "ai_summary", length = 200)
     private String aiSummary;
 
+    @Column(name = "ai_reason", length = 300)
+    private String aiReason;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "classified_by", nullable = false, length = 16)
     private ClassifiedBy classifiedBy;
@@ -127,9 +130,11 @@ public class Complaint {
         this.aiUrgency = classification.aiUrgency();
         this.aiConfidence = classification.aiConfidence();
         this.aiSummary = classification.aiSummary();
+        this.aiReason = classification.aiReason();
         this.classifiedBy = classification.classifiedBy();
         this.needsReview = classification.needsReview();
-        this.safetyTerms = new String[0];
+        this.safetyTerms = classification.safetyTerms().toArray(String[]::new);
+        this.safetyEscalated = !classification.safetyTerms().isEmpty();
         this.status = ComplaintStatus.OPEN;
         this.createdAt = createdAt;
         this.firstResponseDueAt = firstResponseDueAt;
@@ -227,6 +232,10 @@ public class Complaint {
         return aiSummary;
     }
 
+    public String getAiReason() {
+        return aiReason;
+    }
+
     public ClassifiedBy getClassifiedBy() {
         return classifiedBy;
     }
@@ -292,7 +301,11 @@ public class Complaint {
     }
 
     public record Classification(ComplaintCategory category, Urgency urgency, ComplaintCategory aiCategory,
-                                 Urgency aiUrgency, BigDecimal aiConfidence, String aiSummary,
-                                 ClassifiedBy classifiedBy, boolean needsReview) {
+                                 Urgency aiUrgency, BigDecimal aiConfidence, String aiSummary, String aiReason,
+                                 ClassifiedBy classifiedBy, boolean needsReview, List<String> safetyTerms) {
+
+        public Classification {
+            safetyTerms = safetyTerms == null ? List.of() : List.copyOf(safetyTerms);
+        }
     }
 }

@@ -7,6 +7,7 @@ import com.isocode.township.auth.SessionUser;
 import com.isocode.township.complaint.ComplaintStateMachine.Actor;
 import com.isocode.township.complaint.dto.ComplaintDetail;
 import com.isocode.township.complaint.dto.ComplaintDetail.Actions;
+import com.isocode.township.complaint.dto.ComplaintDetail.EscalationView;
 import com.isocode.township.complaint.dto.ComplaintDetail.Person;
 import com.isocode.township.complaint.dto.ComplaintDetail.TimelineEntry;
 import com.isocode.township.complaint.dto.ComplaintSummary;
@@ -27,16 +28,20 @@ public class ComplaintViews {
 
     private static final int SUMMARY_LENGTH = 80;
     private static final Set<ComplaintEventType> STAFF_ID_EVENTS =
-            EnumSet.of(ComplaintEventType.AUTO_ASSIGNED, ComplaintEventType.ASSIGNEE_CHANGED);
+            EnumSet.of(ComplaintEventType.AUTO_ASSIGNED, ComplaintEventType.ASSIGNEE_CHANGED,
+                    ComplaintEventType.ESCALATED);
 
     private final ComplaintEventRepository eventRepository;
+    private final EscalationRepository escalationRepository;
     private final AppUserRepository userRepository;
     private final FlatRepository flatRepository;
     private final Clock clock;
 
-    public ComplaintViews(ComplaintEventRepository eventRepository, AppUserRepository userRepository,
+    public ComplaintViews(ComplaintEventRepository eventRepository, EscalationRepository escalationRepository,
+                          AppUserRepository userRepository,
                           FlatRepository flatRepository, Clock clock) {
         this.eventRepository = eventRepository;
+        this.escalationRepository = escalationRepository;
         this.userRepository = userRepository;
         this.flatRepository = flatRepository;
         this.clock = clock;
@@ -48,7 +53,7 @@ public class ComplaintViews {
                 flatCode(complaint.getFlatId()), shortSummary(complaint), complaint.getCategory(), complaint.getUrgency(),
                 complaint.getStatus(), name(complaint.getAssigneeId()), complaint.getCreatedAt(), nextDue,
                 isOverdue(nextDue), complaint.getReopenCount(), complaint.isNeedsReview(),
-                complaint.isSafetyEscalated(), complaint.getPhotoContentType().isPresent());
+                complaint.isSafetyEscalated(), escalationOpen(complaint), complaint.getPhotoContentType().isPresent());
     }
 
     public ComplaintDetail detail(Complaint complaint, SessionUser viewer) {
@@ -61,8 +66,23 @@ public class ComplaintViews {
                 complaint.getResolvedAt(), complaint.getClosedAt(), nextDue, isOverdue(nextDue),
                 complaint.getReopenCount(), complaint.getRating().orElse(null), complaint.getRatingComment(),
                 complaint.getClassifiedBy(), complaint.getAiCategory(), complaint.getAiUrgency(),
-                complaint.getAiConfidence(), complaint.getAiSummary(), complaint.isNeedsReview(),
-                complaint.isSafetyEscalated(), complaint.getSafetyTerms(), timeline(complaint), actions(complaint, viewer));
+                complaint.getAiConfidence(), complaint.getAiSummary(), complaint.getAiReason(), complaint.isNeedsReview(),
+                complaint.isSafetyEscalated(), complaint.getSafetyTerms(), escalation(complaint), timeline(complaint),
+                actions(complaint, viewer));
+    }
+
+    private EscalationView escalation(Complaint complaint) {
+        return escalationRepository.findByComplaintId(complaint.getId())
+                .map(escalation -> new EscalationView(escalation.getId(), name(escalation.getDutyManagerId()),
+                        escalation.getReason(), escalation.getCreatedAt(), name(escalation.getAcknowledgedBy()),
+                        escalation.getAcknowledgedAt()))
+                .orElse(null);
+    }
+
+    private boolean escalationOpen(Complaint complaint) {
+        return complaint.isSafetyEscalated() && escalationRepository.findByComplaintId(complaint.getId())
+                .map(escalation -> !escalation.isAcknowledged())
+                .orElse(false);
     }
 
     private List<TimelineEntry> timeline(Complaint complaint) {

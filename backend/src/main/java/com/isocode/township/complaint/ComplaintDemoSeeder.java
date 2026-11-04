@@ -98,7 +98,7 @@ public class ComplaintDemoSeeder {
 
         Complaint complaint = complaintRepository.save(new Complaint(refNo(created), flat.getId(), resident.getId(),
                 spec.description(), new Complaint.Classification(spec.category(), spec.urgency(), spec.category(),
-                        spec.urgency(), spec.confidence(), spec.summary(), ClassifiedBy.AI, false),
+                        spec.urgency(), spec.confidence(), spec.summary(), null, ClassifiedBy.AI, false, List.of()),
                 created, targets.firstResponseDue(created, spec.urgency()), targets.resolveDue(created, spec.urgency())));
         event(complaint, ComplaintEventType.CREATED, resident.getId(), null, "OPEN", null, created);
         complaint.assignTo(staffId);

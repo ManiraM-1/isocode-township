@@ -12,9 +12,11 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(properties = {
         "app.demo-mode=false",
-        "app.jwt.secret=${random.uuid}${random.uuid}"
+        "app.jwt.secret=${random.uuid}${random.uuid}",
+        "app.gemini.api-key="
 })
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class, TestSessions.class})
+@Import({TestcontainersConfiguration.class, FixedClockConfiguration.class, TestSessions.class,
+        ScriptedAiConfiguration.class})
 public @interface IntegrationTest {
 }

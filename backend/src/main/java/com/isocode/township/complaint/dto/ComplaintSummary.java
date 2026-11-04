@@ -21,5 +21,6 @@ public record ComplaintSummary(
         int reopenCount,
         boolean needsReview,
         boolean safetyEscalated,
+        boolean escalationOpen,
         boolean hasPhoto) {
 }

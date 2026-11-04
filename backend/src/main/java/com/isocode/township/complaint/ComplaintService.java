@@ -26,18 +26,21 @@ public class ComplaintService {
     private final ComplaintPhotoStore photoStore;
     private final ComplaintClassifier classifier;
     private final StaffLoads staffLoads;
+    private final SafetyEscalator safetyEscalator;
     private final SocietySettingsRepository settingsRepository;
     private final FlatAccessGuard accessGuard;
     private final Clock clock;
 
     public ComplaintService(ComplaintRepository complaintRepository, ComplaintEventRepository eventRepository,
                             ComplaintPhotoStore photoStore, ComplaintClassifier classifier, StaffLoads staffLoads,
+                            SafetyEscalator safetyEscalator,
                             SocietySettingsRepository settingsRepository, FlatAccessGuard accessGuard, Clock clock) {
         this.complaintRepository = complaintRepository;
         this.eventRepository = eventRepository;
         this.photoStore = photoStore;
         this.classifier = classifier;
         this.staffLoads = staffLoads;
+        this.safetyEscalator = safetyEscalator;
         this.settingsRepository = settingsRepository;
         this.accessGuard = accessGuard;
         this.clock = clock;
@@ -61,6 +64,7 @@ public class ComplaintService {
             complaint.attachPhotoType(type.contentType());
         });
         record(complaint, ComplaintEventType.CREATED, user.userId(), null, ComplaintStatus.OPEN.name(), null, now);
+        safetyEscalator.escalate(complaint, now);
 
         AutoAssigner.pick(complaint.getCategory(), staffLoads.current()).map(StaffLoad::staffId).ifPresent(staffId -> {
             complaint.assignTo(staffId);
