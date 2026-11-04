@@ -209,7 +209,7 @@ Commit: `feat(committee): add monthly collections, dues ageing and complaint met
 - Vitest: Money formatting (₹1,23,456.00), phone validation.
 Commit: `feat(web): scaffold frontend with design system and OTP sign-in`
 
-### [ ] Step 14: Resident screens
+### [x] Step 14: Resident screens
 Bottom navigation: Home, Bills, Complaints.
 - **Home:** greeting + flat code; **dues card** (amount, due date or "overdue by N days" in red, late fee so far, primary **Pay** button), **open complaints** (status chip, assignee, time since raised, linked/escalated badges), all reachable in two taps. No visitors card until visitors are built.
 - **Bills:** current outstanding, list of bills with status, ledger with running balance, receipts.

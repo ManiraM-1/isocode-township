@@ -15,6 +15,7 @@ export function ResidentHome() {
   return (
     <Page title={`Hello, ${me.name.split(" ")[0]}`} subtitle={`Flat ${flatCode}`}>
       <DuesCard flatId={flatId} />
+      <OpenComplaints flatId={flatId} />
     </Page>
   );
 }
@@ -104,7 +105,7 @@ function DuesCardBody({ summary, bills }: { summary: FlatSummary; bills: Bill[] 
   );
 }
 
-export function OpenComplaints({ flatId }: { flatId: number }) {
+function OpenComplaints({ flatId }: { flatId: number }) {
   const complaints = useFlatComplaints(flatId);
   const open = complaints.data?.filter((complaint) => complaint.status !== "CLOSED") ?? [];
 

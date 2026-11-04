@@ -9,6 +9,9 @@ import { ResidentHome } from "./features/resident/ResidentHome";
 import { BillsPage } from "./features/resident/BillsPage";
 import { PayPage } from "./features/resident/PayPage";
 import { ReceiptPage } from "./features/resident/ReceiptPage";
+import { ComplaintsPage } from "./features/resident/ComplaintsPage";
+import { NewComplaintPage } from "./features/resident/NewComplaintPage";
+import { ComplaintDetailPage } from "./features/resident/ComplaintDetailPage";
 import { DeskLayout } from "./features/desk/DeskLayout";
 import { DeskHome } from "./features/desk/DeskHome";
 
@@ -22,6 +25,9 @@ export function App() {
         <Route path="/bills" element={<BillsPage />} />
         <Route path="/bills/pay" element={<PayPage />} />
         <Route path="/receipts/:receiptNo" element={<ReceiptPage />} />
+        <Route path="/complaints" element={<ComplaintsPage />} />
+        <Route path="/complaints/new" element={<NewComplaintPage />} />
+        <Route path="/complaints/:complaintId" element={<ComplaintDetailPage />} />
       </Route>
       <Route element={<RequireRole role="HELPDESK"><DeskLayout /></RequireRole>}>
         <Route path="/desk/complaints" element={<DeskHome />} />

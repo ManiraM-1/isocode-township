@@ -11,6 +11,7 @@ export function useResidentFlat() {
 const NAV = [
   { to: "/home", label: "Home", icon: "⌂" },
   { to: "/bills", label: "Bills", icon: "₹" },
+  { to: "/complaints", label: "Complaints", icon: "✎" },
 ] as const;
 
 export function ResidentLayout() {
