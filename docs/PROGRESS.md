@@ -181,3 +181,16 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Tests: 575 backend, 20 frontend.
 - Open items: no per-IP rate limit beyond the OTP limits (listed for later in the TDD).
 - Next step: Step 18
+
+## 2026-11-04: Step 17 follow-up, import page crash
+- The backend stores gateway reconciliations as `RECONCILED_GATEWAY`; the frontend expected `RECONCILED`, so an import with a reconciled row rendered a blank page (found by a production-build walk, missed by the Step 15 API check). Fixed the type and the labels; badges fall back to the raw value; an app-wide error boundary shows a reload card instead of a blank screen; a Vitest test checks a label exists for every stored decision.
+
+## 2026-11-04: Step 18, Docker image, deployment and docs
+- Multi-stage `Dockerfile`: Node 22 builds the frontend and runs its tests; Maven (JDK 21) packages the jar with the build in `static/`; the runtime is `eclipse-temurin:21-jre-alpine` as a non-root user with a container health check and memory settings for a 512 MB instance. `.dockerignore` keeps `.env`, `node_modules`, `target` and the docs out of the build context.
+- Spring serves the SPA: `SinglePageAppConfig` returns a file when it exists and `index.html` for client routes (no file extension, not `/api` or `/actuator`); unknown API paths and missing assets stay 404. Tests cover client routes, assets, missing files and API paths. `server.port` reads `PORT`, forwarded headers are honoured behind Render's proxy, and responses are compressed.
+- `render.yaml` blueprint (Docker web service, free plan, health check `/api/health`, generated `JWT_SECRET`, demo mode on, the database settings and Gemini key entered by hand). `docker-compose.yml` takes `DB_PORT` (default 5432) for machines that already run PostgreSQL.
+- `deployment.md`: demo logins, environment variable names, local run for Windows and macOS/Linux (one container, or backend and frontend separately), tests, how it is deployed, the free-tier cold start. `README.md`: what it is, links, screenshots (`docs/screenshots/`, fictional demo data), quick start, layout.
+- Verified locally: the image builds; the container starts against PostgreSQL, serves client routes and assets under the Content-Security-Policy with no violations, and a headless walk of 17 screens at 360 px and 1280 px passed (no horizontal scroll, sign-in through the real OTP flow).
+- Tests: 586 backend, 22 frontend.
+- Not done here: the live deployment itself, which needs Maniram's Render and Neon accounts (steps in the hand-over); `<LIVE_URL>` placeholders in README and deployment.md until then.
+- Next step: Step 24

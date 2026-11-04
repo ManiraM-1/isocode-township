@@ -236,7 +236,7 @@ Commit: `feat(web): add committee dashboard with collections, ageing and complai
 - **Demo reset:** `POST /api/desk/demo/reset` (HELPDESK only) that exists only when `APP_DEMO_MODE=true` (the controller bean is not created otherwise, so the route is a 404). It wipes all data (Flyway `clean` then `migrate`, allowed only in demo mode, because the ledger trigger correctly refuses deletes) and reseeds relative to the current date, so the brief scenarios (47 and 18 days overdue) are true again on any day. The desk UI has a "Reset demo data" button, shown only in demo mode, with a confirm step. Tests: reset restores the seeded state; resident gets 403; with demo mode off the endpoint does not exist.
 Commit: `chore: polish states and accessibility and add reviewer demo script`
 
-### [ ] Step 18: Docker image, deployment and docs
+### [x] Step 18: Docker image, deployment and docs
 - Multi-stage `Dockerfile`: Node builds the frontend → Maven builds the jar with the frontend copied into `static/` → slim JRE 21 runtime, non-root user. Spring serves the SPA with a fallback to `index.html` for client routes.
 - Deploy on Render (web service from Dockerfile, health check `/api/health`) with Neon PostgreSQL. Demo mode on in the deployed app.
 - `deployment.md`: run locally step by step (Windows and macOS/Linux commands), how it is deployed, environment variable **names only**, demo logins (phones; OTP shown on screen), note on free-tier cold start.

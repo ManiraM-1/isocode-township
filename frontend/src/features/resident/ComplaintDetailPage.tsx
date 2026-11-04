@@ -144,10 +144,10 @@ function ResponseTimer({ complaint }: { complaint: ComplaintDetail }) {
 function TimerRow({ label, value, late = false }: { label: string; value: string; late?: boolean }) {
   return (
     <div className="flex justify-between gap-4">
-      <dt className="text-ink-soft">{label}</dt>
+      <dt className="shrink-0 text-ink-soft">{label}</dt>
       <dd className={`text-right font-medium tabular-nums ${late ? "text-danger" : "text-ink"}`}>
         {value}
-        {late && " · running late"}
+        {late && <span className="block text-xs font-normal">Running late</span>}
       </dd>
     </div>
   );
