@@ -46,6 +46,9 @@ app:
   classification:
     give-up-after: 2m
     sweep-every-ms: 60000
+  committee:
+    on-time-target: 90
+    reopen-target: 8
   duplicates:
     lift-window: 24h
     text-window: 72h
