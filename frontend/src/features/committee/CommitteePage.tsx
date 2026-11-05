@@ -82,7 +82,7 @@ export function CommitteePage() {
     >
       {overview.isPending ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {Array.from({ length: 5 }, (_, index) => (
               <Skeleton key={index} className="h-28" />
             ))}
@@ -103,7 +103,7 @@ function Report({ data, month }: { data: CommitteeOverview; month: string }) {
   const { collections, reconciliation, complaints } = data;
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <Kpi
           label="Collection rate"
           value={percent(collections.collectionRate)}
@@ -158,7 +158,7 @@ function Kpi({ label, value, target, ok, note }: { label: string; value: string;
   return (
     <Card className="p-4">
       <p className="text-xs font-medium text-ink-soft">{label}</p>
-      <p className="mt-1 break-words text-xl font-semibold tabular-nums tracking-tight text-ink md:text-2xl">{value}</p>
+      <p className="mt-1 whitespace-nowrap text-lg font-semibold tabular-nums tracking-tight text-ink sm:text-xl xl:text-2xl">{value}</p>
       {target && (
         <p className={`mt-1 text-xs font-medium ${ok === false ? "text-danger" : ok ? "text-accent" : "text-ink-faint"}`}>
           {ok === true ? "✓ " : ok === false ? "✗ " : ""}
