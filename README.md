@@ -1,5 +1,7 @@
 # Township resident app
 
+**Live app: https://isocode-township.onrender.com**
+
 A resident app for a gated township in Pune: 2,400 flats in 28 towers.
 
 - **Residents** sign in with their phone number and a one-time code, see and pay their flat's maintenance in test mode, raise complaints with a photo, and follow each complaint to closure.
@@ -9,7 +11,6 @@ A resident app for a gated township in Pune: 2,400 flats in 28 towers.
 
 Built for the Isocode Labs take-home (Brief 4) with Spring Boot 3 (Java 21), PostgreSQL 16, React 18 and Google Gemini.
 
-- **Live app:** `<LIVE_URL>` (demo mode; codes are shown on screen)
 - **Run it / deploy it / demo logins:** [deployment.md](deployment.md)
 - **Five-minute walkthrough:** [docs/DEMO.md](docs/DEMO.md)
 - **Technical design:** [docs/TDD.md](docs/TDD.md) (PDF: `docs/TDD.pdf`)

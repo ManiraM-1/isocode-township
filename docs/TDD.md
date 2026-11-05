@@ -5,7 +5,7 @@
 Author: Maniram · November 2026
 
 - **GitHub:** https://github.com/ManiraM-1/isocode-township
-- **Live app:** `<LIVE_URL>` (demo mode: sign-in codes are shown on screen; logins in `deployment.md`)
+- **Live app:** https://isocode-township.onrender.com (demo mode: sign-in codes are shown on screen; logins in `deployment.md`)
 - **Five-minute walkthrough:** `docs/DEMO.md` in the repository
 
 ---

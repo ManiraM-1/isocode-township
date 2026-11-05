@@ -1,7 +1,7 @@
 # Deployment
 
 - **Repository:** https://github.com/ManiraM-1/isocode-township
-- **Live app:** `<LIVE_URL>` (Render, free tier; see the cold-start note below)
+- **Live app:** https://isocode-township.onrender.com (Render, free tier; see the cold-start note below)
 
 The app is one Docker image. A Spring Boot backend (Java 21) serves the REST API and the built React frontend from the same origin, so the httpOnly session cookie works without any cross-site setup. The data lives in PostgreSQL 16 (Neon in production, Docker locally).
 
@@ -143,3 +143,7 @@ The live Gemini accuracy check is excluded by default. It needs a real key:
 ### Free-tier cold start
 
 Render's free web services sleep after about 15 minutes without traffic. The first request after that takes **about a minute** while the container and JVM start. Open the live link once and wait for the login page before a demo; after that it is fast. Neon's free database also pauses when idle and wakes in a second or two on the first query.
+
+### Reset demo data on the live app
+
+"Reset demo data" takes **1–2 minutes** on the free tier. During that time the demo login list is empty; wait for it to return, then sign in.
