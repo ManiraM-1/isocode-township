@@ -13,7 +13,7 @@ export function DeskLayout() {
   const signOut = useSignOut();
   return (
     <div className="min-h-screen bg-canvas md:flex">
-      <aside className="no-print hidden w-56 shrink-0 border-r border-line bg-surface md:flex md:min-h-screen md:flex-col">
+      <aside className="no-print hidden w-56 shrink-0 overflow-y-auto border-r border-line bg-surface md:sticky md:top-0 md:flex md:h-screen md:flex-col">
         <div className="px-5 pb-4 pt-6">
           <p className="text-sm font-semibold text-ink">Help desk</p>
           <p className="text-xs text-ink-faint">
@@ -39,7 +39,7 @@ export function DeskLayout() {
             ))}
           </ul>
         </nav>
-        <div className="space-y-1 p-3">
+        <div className="mt-auto space-y-1 p-3">
           <DemoResetButton />
           <button
             type="button"
