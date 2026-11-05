@@ -1,4 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "../components/Toast";
 import { api, ApiError } from "./api";
 import { DemoUser, Me } from "./types";
 
@@ -44,16 +46,37 @@ export function useDemoMode(): boolean {
   return !!demoUsers.data;
 }
 
+export const SIGN_OUT_FAILED =
+  "We could not reach the server, so this device may still be signed in. Please try signing out again.";
+
+export async function signOut(
+  queryClient: QueryClient,
+  requestLogout: () => Promise<unknown>,
+  navigateToLogin: () => void,
+  showError: (message: string) => void,
+) {
+  try {
+    await requestLogout();
+  } catch {
+    showError(SIGN_OUT_FAILED);
+  }
+  await queryClient.cancelQueries();
+  queryClient.setQueryData<Me | null>(ME_KEY, null);
+  queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== ME_KEY[0] });
+  navigateToLogin();
+}
+
 export function useSignOut() {
   const queryClient = useQueryClient();
-  return async () => {
-    try {
-      await api.post("/api/auth/logout");
-    } finally {
-      queryClient.clear();
-      queryClient.setQueryData<Me | null>(ME_KEY, null);
-    }
-  };
+  const navigate = useNavigate();
+  const toast = useToast();
+  return () =>
+    signOut(
+      queryClient,
+      () => api.post("/api/auth/logout"),
+      () => navigate("/login", { replace: true }),
+      (message) => toast(message, "error"),
+    );
 }
 
 export function homePathFor(me: Me): string {

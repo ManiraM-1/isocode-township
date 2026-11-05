@@ -185,6 +185,22 @@ class AuthFlowTest {
     }
 
     @Test
+    void afterLogoutTheClearedCookieIsNotSignedInAndMatchesTheLoginCookie() throws Exception {
+        Cookie session = signIn(NEERAJ);
+
+        var response = mockMvc.perform(post("/api/auth/logout").with(sameOriginCsrf()).cookie(session))
+                .andExpect(status().isNoContent())
+                .andReturn().getResponse();
+
+        Cookie cleared = response.getCookie(SessionCookies.NAME);
+        assertThat(cleared.getPath()).isEqualTo(session.getPath());
+        assertThat(cleared.getSecure()).isEqualTo(session.getSecure()).isTrue();
+        assertThat(cleared.isHttpOnly()).isEqualTo(session.isHttpOnly()).isTrue();
+        assertThat(cleared.getAttribute("SameSite")).isEqualTo(session.getAttribute("SameSite"));
+        mockMvc.perform(get("/api/me").cookie(cleared)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void postWithoutCsrfTokenIsForbidden() throws Exception {
         mockMvc.perform(post("/api/auth/otp/request")
                         .contentType(MediaType.APPLICATION_JSON)

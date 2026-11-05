@@ -202,6 +202,9 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 - Next step: Step 25 (final check), after the live deployment.
 
 ## 2026-11-04: End of session
-- Deployed live at https://<your-url> (health OK).
+- Deployed live at https://isocode-township.onrender.com (health OK).
 - Open bug: Sign out doesn't work on the live app, fix it next session.
 - Then: live URL into TDD/README, rebuild TDD.pdf, run DEMO.md on live, then zip and submit.
+
+## 2026-11-05: Sign-out fix
+- Live check: the server was correct (204, cookies cleared with matching attributes, `/api/me` 401). The screen stayed signed in until a refresh because `queryClient.clear()` detached the mounted session query, so the later `null` never reached it. `signOut` now cancels queries, sets the session to null, removes other cached data and goes to `/login`; if the request fails it does the same and shows an error toast. Tests added on both sides.
