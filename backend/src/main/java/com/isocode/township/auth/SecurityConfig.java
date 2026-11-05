@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
@@ -37,7 +38,8 @@ public class SecurityConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfRepository)
-                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler()))
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy()))
                 .addFilterBefore(new SessionCookieAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
                 .headers(headers -> headers

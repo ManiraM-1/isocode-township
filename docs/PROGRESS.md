@@ -208,3 +208,4 @@ Newest entry at the bottom. Claude Code appends one entry after every step. If a
 
 ## 2026-11-05: Sign-out fix
 - Live check: the server was correct (204, cookies cleared with matching attributes, `/api/me` 401). The screen stayed signed in until a refresh because `queryClient.clear()` detached the mounted session query, so the later `null` never reached it. `signOut` now cancels queries, sets the session to null, removes other cached data and goes to `/login`; if the request fails it does the same and shows an error toast. Tests added on both sides.
+- Button audit on live found a second bug: Spring's CSRF session strategy cleared the `XSRF-TOKEN` cookie on every signed-in response (stateless auth looks like a new login each time), so a poll racing a button click could cause a 403. The strategy is now disabled, with a test.

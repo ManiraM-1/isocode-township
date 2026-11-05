@@ -185,6 +185,17 @@ class AuthFlowTest {
     }
 
     @Test
+    void aSignedInRequestDoesNotClearTheCsrfCookie() throws Exception {
+        Cookie session = signIn(NEERAJ);
+
+        Cookie csrf = mockMvc.perform(get("/api/me").with(sameOriginCsrf()).cookie(session))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("XSRF-TOKEN");
+
+        assertThat(csrf).isNull();
+    }
+
+    @Test
     void afterLogoutTheClearedCookieIsNotSignedInAndMatchesTheLoginCookie() throws Exception {
         Cookie session = signIn(NEERAJ);
 
