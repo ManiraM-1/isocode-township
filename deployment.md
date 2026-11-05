@@ -2,6 +2,7 @@
 
 - **Repository:** https://github.com/ManiraM-1/isocode-township
 - **Live app:** https://isocode-township.onrender.com (Render, free tier; see the cold-start note below)
+  Hosted on Render’s free tier. If the app has been idle, the first load can take about a minute while the server starts; after that it’s fast.
 
 The app is one Docker image. A Spring Boot backend (Java 21) serves the REST API and the built React frontend from the same origin, so the httpOnly session cookie works without any cross-site setup. The data lives in PostgreSQL 16 (Neon in production, Docker locally).
 

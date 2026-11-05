@@ -6,6 +6,7 @@ Author: Maniram · November 2026
 
 - **GitHub:** https://github.com/ManiraM-1/isocode-township
 - **Live app:** https://isocode-township.onrender.com (demo mode: sign-in codes are shown on screen; logins in `deployment.md`)
+  Hosted on Render’s free tier. If the app has been idle, the first load can take about a minute while the server starts; after that it’s fast.
 - **Five-minute walkthrough:** `docs/DEMO.md` in the repository
 
 ---

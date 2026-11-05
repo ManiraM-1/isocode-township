@@ -1,6 +1,7 @@
 # Township resident app
 
-**Live app: https://isocode-township.onrender.com**
+**Live app: https://isocode-township.onrender.com**  
+Hosted on Render’s free tier. If the app has been idle, the first load can take about a minute while the server starts; after that it’s fast.
 
 A resident app for a gated township in Pune: 2,400 flats in 28 towers.
 
