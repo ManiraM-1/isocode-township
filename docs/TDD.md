@@ -26,7 +26,7 @@ The brief's core slice, end to end:
 
 Eight-plus screens: login, resident home, bills and statement, pay and receipt, complaints (list, new, detail), help desk board and complaint detail, payments (import and queue), committee report.
 
-**Quality bar:** 586 backend tests (JUnit 5, AssertJ, Mockito, Spring Boot tests on real PostgreSQL through Testcontainers) and 22 frontend tests (Vitest). Each of the nine product rules in Section 4 has at least one test. The commit history follows the build plan one step at a time.
+**Quality bar:** 588 backend tests (JUnit 5, AssertJ, Mockito, Spring Boot tests on real PostgreSQL through Testcontainers) and 24 frontend tests (Vitest). Each of the nine product rules in Section 4 has at least one test. The commit history follows the build plan one step at a time.
 
 ---
 
