@@ -329,9 +329,21 @@ Everything the brief does not state is an assumption, labelled with an ID and lo
 
 ## 13. How I used AI
 
-I built this with an AI coding assistant (Claude, through Claude Code) as a pair programmer, working from the step-by-step plan in `docs/PLAN.md` and the rules in `CLAUDE.md`:
-- **The assistant** drafted most of the code, tests and documentation, one plan step at a time, in small commits.
-- **I made the product and money decisions** whenever the brief was silent, and each is logged as an assumption. Examples: Swati's history (she has paid nothing); the amount as a supporting signal only; the definitions of collection rate and reopen rate; showing late-fee reversals and "In credit" as their own lines; the 90% target only on the on-time rate; the safety notice wording.
-- **I reviewed each step** against the brief and its tests before moving on.
+I used AI a lot on this project, which the brief encourages. But I want to be clear about which parts were mine.
 
-AI also runs inside the product (Gemini, Section 7). There it is measured against a labelled set, and it can never override the safety rule or a staff correction.
+I started by asking Claude to help me compare the five briefs. I went with the township app because I'd built something similar before (Gatify, a gated community product), so I already understood how residents, help desks and committees actually work. Before writing any code, I turned the brief into a written plan: the build steps in order, a list of every assumption I had to make, and a set of rules the coding agent had to follow. For example, money is always exact (BigDecimal, never double), the ledger is never edited, no secrets go in the repo, and every rule the brief calls non-negotiable needs a test.
+
+Claude Code wrote most of the code, one step at a time. After each step I read what it built, checked it against the brief, and only then let it move on. Each commit had to build and pass all tests before it was pushed.
+
+Some of the decisions that shaped the product:
+
+- Late interest at 21% a year. The brief doesn't give a rate, so this is a placeholder to confirm against the society's bye-laws. It's a setting, not code.
+- A bank payment is only posted automatically when two separate clues agree on the flat (the flat reference, a known UPI ID, or an amount only one flat owes). The amount on its own is a weak clue, because many flats owe the same amount, so it can support a match but never block one.
+- If the same row appears twice without a bank reference, I send it to the accounts queue instead of skipping it, because two people can genuinely pay the same amount on the same day. Very large amounts are also held for a person to check.
+- When I reviewed the safety words, I found that a wildcard on आग ("fire") also matched आगे ("ahead"), one of the most common Hindi words. I replaced the wildcards with explicit word forms, and added everyday sentences that must never raise an alarm. I also made an AI "Critical" rating alert the duty manager, so the word list isn't the only safety net.
+- The first live AI test showed 5 of 35 complaints timing out. Instead of making residents wait longer, I moved the AI into the background. The safety check still runs instantly, and the AI fills in the category a few seconds later.
+- Demo data goes stale as late fees build up every day, so I added a demo reset and a sample bank statement that's generated from the current data.
+
+I checked the important numbers myself: Swati's late fee of ₹172.25, the reconciliation totals, and the matching results on the sample statement. I also ran the live Gemini test (97% category accuracy, no missed emergencies, no false alarms) and clicked through the deployed app.
+
+Inside the product, AI only does one job: suggesting a complaint's category and urgency. Every rupee is calculated by fixed, tested rules. The AI can't post a payment, close a complaint, or lower a safety escalation.
